@@ -1,0 +1,8 @@
+{
+  "name": "arcanum-tarot-ai",
+  "main": "worker.js",
+  "compatibility_date": "2026-11-08",
+  "vars": {
+    "ALLOWED_ORIGIN": "https://YOUR_GITHUB_USERNAME.github.io"
+  }
+}
