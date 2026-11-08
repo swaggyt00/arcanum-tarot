@@ -11,7 +11,7 @@ export const CARDS = [
     "revKeywords": "наивность, риск без подготовки",
     "up": "Начало пути требует любопытства и готовности сделать первый шаг.",
     "rev": "Импульс может опережать осознанность; проверь опору перед прыжком.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/ar00.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/ar00.jpg"
   },
   {
     "id": "ar01",
@@ -24,7 +24,7 @@ export const CARDS = [
     "revKeywords": "манипуляция, разрыв между словом и делом",
     "up": "Ресурсы уже рядом: результат зависит от конкретного действия.",
     "rev": "Убедительные слова не заменяют действий; проверь, кто управляет ситуацией.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/ar01.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/ar01.jpg"
   },
   {
     "id": "ar02",
@@ -37,7 +37,7 @@ export const CARDS = [
     "revKeywords": "игнорирование интуиции, скрытность",
     "up": "Не всё известно; полезно наблюдать и не торопить выводы.",
     "rev": "Информация может оставаться закрытой, а предположения — подменять факты.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/ar02.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/ar02.jpg"
   },
   {
     "id": "ar03",
@@ -50,7 +50,7 @@ export const CARDS = [
     "revKeywords": "истощение, гиперопека, застой",
     "up": "То, чему уделяют внимание и заботу, получает шанс вырасти.",
     "rev": "Чрезмерные ожидания или недостаток заботы истощают процесс.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/ar03.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/ar03.jpg"
   },
   {
     "id": "ar04",
@@ -63,7 +63,7 @@ export const CARDS = [
     "revKeywords": "контроль, жёсткость, борьба за власть",
     "up": "Чёткая структура и границы помогают создать устойчивость.",
     "rev": "Контроль может превратиться в давление: где нужна гибкость?",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/ar04.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/ar04.jpg"
   },
   {
     "id": "ar05",
@@ -76,7 +76,7 @@ export const CARDS = [
     "revKeywords": "догматизм, конфликт с правилами",
     "up": "Опора на опыт, договорённости и общие ценности полезна.",
     "rev": "Устаревшие нормы могут мешать собственному пути.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/ar05.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/ar05.jpg"
   },
   {
     "id": "ar06",
@@ -89,7 +89,7 @@ export const CARDS = [
     "revKeywords": "разлад, несовпадение желаний",
     "up": "Здесь важно осознанно выбрать, а не ждать идеальной ясности.",
     "rev": "Симпатия не отменяет различий в ценностях и намерениях.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/ar06.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/ar06.jpg"
   },
   {
     "id": "ar07",
@@ -102,7 +102,7 @@ export const CARDS = [
     "revKeywords": "потеря курса, поспешность",
     "up": "Управляемое усилие способно сдвинуть ситуацию с места.",
     "rev": "Сила без направления ведёт к хаосу; уточни цель.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/ar07.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/ar07.jpg"
   },
   {
     "id": "ar08",
@@ -115,7 +115,7 @@ export const CARDS = [
     "revKeywords": "неуверенность, истощение терпения",
     "up": "Мягкая устойчивость продуктивнее давления.",
     "rev": "Накопленное напряжение может ослаблять самоконтроль.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/ar08.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/ar08.jpg"
   },
   {
     "id": "ar09",
@@ -128,7 +128,7 @@ export const CARDS = [
     "revKeywords": "изоляция, закрытость, избегание",
     "up": "Одиночество может дать ясность, если оно осознанно.",
     "rev": "Полезная пауза рискует превратиться в изоляцию.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/ar09.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/ar09.jpg"
   },
   {
     "id": "ar10",
@@ -141,7 +141,7 @@ export const CARDS = [
     "revKeywords": "неустойчивость, сопротивление изменениям",
     "up": "Внешние обстоятельства меняются; важна гибкость.",
     "rev": "Нельзя контролировать всё; снижай зависимость от удачи.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/ar10.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/ar10.jpg"
   },
   {
     "id": "ar11",
@@ -154,7 +154,7 @@ export const CARDS = [
     "revKeywords": "предвзятость, дисбаланс, несправедливость",
     "up": "Решение требует фактов, границ и ответственности.",
     "rev": "Проверь собственные допущения и равенство условий.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/ar11.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/ar11.jpg"
   },
   {
     "id": "ar12",
@@ -167,7 +167,7 @@ export const CARDS = [
     "revKeywords": "застой, бессмысленная жертва",
     "up": "Новый взгляд иногда важнее немедленного действия.",
     "rev": "Отсрочка не должна становиться бесконечным избеганием.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/ar12.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/ar12.jpg"
   },
   {
     "id": "ar13",
@@ -180,7 +180,7 @@ export const CARDS = [
     "revKeywords": "сопротивление завершению, застревание",
     "up": "Старый формат завершается, освобождая место новому.",
     "rev": "Держаться за устаревшее может быть больнее, чем отпустить.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/ar13.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/ar13.jpg"
   },
   {
     "id": "ar14",
@@ -193,7 +193,7 @@ export const CARDS = [
     "revKeywords": "крайности, потеря меры",
     "up": "Совмещение разных потребностей создаёт устойчивое решение.",
     "rev": "Спешка и перекосы мешают естественному развитию.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/ar14.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/ar14.jpg"
   },
   {
     "id": "ar15",
@@ -206,7 +206,7 @@ export const CARDS = [
     "revKeywords": "освобождение от привязки, пересмотр контроля",
     "up": "Полезно увидеть, чем управляет страх или привычка.",
     "rev": "Появляется шанс выйти из зависимой модели поведения.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/ar15.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/ar15.jpg"
   },
   {
     "id": "ar16",
@@ -219,7 +219,7 @@ export const CARDS = [
     "revKeywords": "страх перемен, отсроченный кризис",
     "up": "Неустойчивые конструкции не выдерживают проверки реальностью.",
     "rev": "Сопротивление переменам может затягивать напряжение.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/ar16.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/ar16.jpg"
   },
   {
     "id": "ar17",
@@ -232,7 +232,7 @@ export const CARDS = [
     "revKeywords": "разочарование, потеря веры",
     "up": "Появляется пространство для восстановления и спокойной веры в себя.",
     "rev": "Ожидания стоит соотнести с реальными шагами.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/ar17.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/ar17.jpg"
   },
   {
     "id": "ar18",
@@ -245,7 +245,7 @@ export const CARDS = [
     "revKeywords": "прояснение иллюзий, тревога",
     "up": "Тревога может усиливать догадки; проверь реальность.",
     "rev": "Часть тумана рассеивается, но выводы пока преждевременны.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/ar18.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/ar18.jpg"
   },
   {
     "id": "ar19",
@@ -258,7 +258,7 @@ export const CARDS = [
     "revKeywords": "задержка радости, завышенные ожидания",
     "up": "Открытость и реальные достижения создают уверенность.",
     "rev": "Не отказывайся от прогресса из-за несовершенного результата.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/ar19.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/ar19.jpg"
   },
   {
     "id": "ar20",
@@ -271,7 +271,7 @@ export const CARDS = [
     "revKeywords": "сомнения, нежелание признать вывод",
     "up": "Пора осмыслить прошлое и сделать взрослый выбор.",
     "rev": "Отложенное решение продолжает занимать внутренние ресурсы.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/ar20.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/ar20.jpg"
   },
   {
     "id": "ar21",
@@ -284,7 +284,7 @@ export const CARDS = [
     "revKeywords": "незавершённость, ожидание финала",
     "up": "Цикл завершён: можно увидеть общий результат.",
     "rev": "Что-то ещё требует финальной точки и интеграции опыта.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/ar21.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/ar21.jpg"
   },
   {
     "id": "wa01",
@@ -297,7 +297,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: запуск, энергия",
     "up": "Смелая идея способна дать старт проекту или сближению.",
     "rev": "Энергия есть, но старт откладывается или не хватает ясного импульса.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/wa01.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/wa01.jpg"
   },
   {
     "id": "wa02",
@@ -310,7 +310,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: выбор направления",
     "up": "Сравни два направления и выбери перспективу роста.",
     "rev": "Планы буксуют из-за страха шага за пределы привычного.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/wa02.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/wa02.jpg"
   },
   {
     "id": "wa03",
@@ -323,7 +323,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: горизонт, ожидание",
     "up": "Первые действия сделаны: пора ждать обратную связь и расширять горизонт.",
     "rev": "Перспектива сужается, возможны задержки и ложные ожидания.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/wa03.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/wa03.jpg"
   },
   {
     "id": "wa04",
@@ -336,7 +336,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: дом, праздник",
     "up": "Появляется ощущение своего места, поддержки и устойчивого этапа.",
     "rev": "Стабильность дома или группы требует дополнительного внимания.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/wa04.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/wa04.jpg"
   },
   {
     "id": "wa05",
@@ -349,7 +349,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: спор, конкуренция",
     "up": "Разные интересы создают спор, который можно направить в развитие.",
     "rev": "Внешний спор стихает, но подавленный конфликт ещё влияет.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/wa05.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/wa05.jpg"
   },
   {
     "id": "wa06",
@@ -362,7 +362,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: признание, победа",
     "up": "Усилия могут получить видимый отклик и признание.",
     "rev": "Самооценка слишком зависит от чужой похвалы или её отсутствия.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/wa06.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/wa06.jpg"
   },
   {
     "id": "wa07",
@@ -375,7 +375,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: защита позиции",
     "up": "Понадобится отстоять границы и выбранный курс.",
     "rev": "Защищаться становится утомительно; пересмотри, за что борешься.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/wa07.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/wa07.jpg"
   },
   {
     "id": "wa08",
@@ -388,7 +388,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: скорость, сообщения",
     "up": "Дела ускоряются, возможна серия новостей и активных контактов.",
     "rev": "Коммуникация тормозится, сроки сдвигаются, ответы запаздывают.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/wa08.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/wa08.jpg"
   },
   {
     "id": "wa09",
@@ -401,7 +401,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: выносливость, осторожность",
     "up": "Опыт заставляет быть внимательнее; силы ещё есть.",
     "rev": "Усталость снижает готовность доверять и пробовать снова.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/wa09.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/wa09.jpg"
   },
   {
     "id": "wa10",
@@ -414,7 +414,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: нагрузка, ответственность",
     "up": "Много задач и обязанностей требуют распределения нагрузки.",
     "rev": "Пора перестать нести всё в одиночку и отказаться от лишнего.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/wa10.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/wa10.jpg"
   },
   {
     "id": "wa11",
@@ -427,7 +427,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: новость, энтузиазм",
     "up": "Любопытство и свежая идея открывают контакт или обучение.",
     "rev": "Начальный азарт угасает без дисциплины и конкретного шага.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/wa11.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/wa11.jpg"
   },
   {
     "id": "wa12",
@@ -440,7 +440,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: рывок, страсть",
     "up": "Импульс помогает быстро начать, но важно управлять темпом.",
     "rev": "Поспешность, непостоянство или раздражение мешают результату.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/wa12.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/wa12.jpg"
   },
   {
     "id": "wa13",
@@ -453,7 +453,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: харизма, смелость",
     "up": "Уверенность и открытость помогают вдохновить других.",
     "rev": "Ревность, перегибы или потребность в признании сбивают фокус.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/wa13.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/wa13.jpg"
   },
   {
     "id": "wa14",
@@ -466,7 +466,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: лидерство, инициатива",
     "up": "Ясная цель и смелое решение задают направление.",
     "rev": "Жёсткое доминирование и нетерпение могут испортить контакт.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/wa14.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/wa14.jpg"
   },
   {
     "id": "cu01",
@@ -479,7 +479,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: новое чувство, эмпатия",
     "up": "Открывается эмоциональная возможность или более искренний разговор.",
     "rev": "Чувства блокируются или не находят безопасного выражения.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/cu01.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/cu01.jpg"
   },
   {
     "id": "cu02",
@@ -492,7 +492,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: взаимность, договорённость",
     "up": "Есть пространство для диалога, уважения и добровольной близости.",
     "rev": "Ожидания и потребности расходятся; нужна ясность с обеих сторон.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/cu02.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/cu02.jpg"
   },
   {
     "id": "cu03",
@@ -505,7 +505,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: дружба, поддержка",
     "up": "Окружение помогает разделить радость и укрепить связи.",
     "rev": "Влияние группы или сплетни могут мешать искреннему контакту.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/cu03.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/cu03.jpg"
   },
   {
     "id": "cu04",
@@ -518,7 +518,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: скука, переоценка",
     "up": "Привычное перестало радовать; стоит заметить новые возможности.",
     "rev": "Возвращается интерес, появляется готовность выйти из апатии.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/cu04.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/cu04.jpg"
   },
   {
     "id": "cu05",
@@ -531,7 +531,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: сожаление, утрата",
     "up": "Внимание сосредоточено на потере; важно заметить то, что осталось.",
     "rev": "Боль постепенно отпускает, появляется возможность примирения с прошлым.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/cu05.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/cu05.jpg"
   },
   {
     "id": "cu06",
@@ -544,7 +544,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: ностальгия, прошлое",
     "up": "Воспоминания о знакомом человеке или месте вызывают тепло.",
     "rev": "Прошлое больше не должно определять настоящее.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/cu06.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/cu06.jpg"
   },
   {
     "id": "cu07",
@@ -557,7 +557,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: выбор, фантазии",
     "up": "Вариантов много, но не каждый подтверждён фактами.",
     "rev": "Наступает ясность: иллюзии уступают место конкретному выбору.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/cu07.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/cu07.jpg"
   },
   {
     "id": "cu08",
@@ -570,7 +570,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: уход, поиск смысла",
     "up": "Возникает желание оставить эмоционально пустую ситуацию.",
     "rev": "Сложно уйти от того, что уже не отвечает внутренним потребностям.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/cu08.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/cu08.jpg"
   },
   {
     "id": "cu09",
@@ -583,7 +583,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: удовлетворение, желание",
     "up": "Заметен шанс почувствовать удовлетворение достигнутым.",
     "rev": "Внешне привлекательный результат может не дать внутреннего счастья.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/cu09.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/cu09.jpg"
   },
   {
     "id": "cu10",
@@ -596,7 +596,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: семья, гармония",
     "up": "Ценности, близость и общий дом становятся важной опорой.",
     "rev": "Представления об идеальной близости не совпадают с реальностью.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/cu10.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/cu10.jpg"
   },
   {
     "id": "cu11",
@@ -609,7 +609,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: симпатия, сообщение",
     "up": "Нежная инициатива или эмоциональное любопытство придают шанс общению.",
     "rev": "Чувства выражаются неуверенно или остаются несказанными.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/cu11.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/cu11.jpg"
   },
   {
     "id": "cu12",
@@ -622,7 +622,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: романтика, предложение",
     "up": "Мягкий жест или искреннее приглашение могут сблизить людей.",
     "rev": "Идеализация и красивые обещания мешают увидеть действительность.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/cu12.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/cu12.jpg"
   },
   {
     "id": "cu13",
@@ -635,7 +635,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: сочувствие, чувствительность",
     "up": "Эмпатия помогает понять мотивы, не нарушая границ.",
     "rev": "Чрезмерное погружение в чувства приводит к истощению.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/cu13.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/cu13.jpg"
   },
   {
     "id": "cu14",
@@ -648,7 +648,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: зрелость, спокойствие",
     "up": "Эмоциональная устойчивость помогает говорить честно.",
     "rev": "Сдержанность превращается в закрытость или манипуляцию.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/cu14.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/cu14.jpg"
   },
   {
     "id": "sw01",
@@ -661,7 +661,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: ясность, решение",
     "up": "Откровенный разговор или ясный вывод снимает путаницу.",
     "rev": "Слова запутывают ситуацию; перед решением проверь факты.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/sw01.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/sw01.jpg"
   },
   {
     "id": "sw02",
@@ -674,7 +674,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: пауза, дилемма",
     "up": "Решение отложено, потому что важные сведения ещё не учтены.",
     "rev": "Избегание выбора усиливает напряжение.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/sw02.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/sw02.jpg"
   },
   {
     "id": "sw03",
@@ -687,7 +687,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: боль, разочарование",
     "up": "Признание неприятной правды — первый шаг к восстановлению.",
     "rev": "Боль отступает, но непроговорённая обида может возвращаться.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/sw03.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/sw03.jpg"
   },
   {
     "id": "sw04",
@@ -700,7 +700,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: отдых, пауза",
     "up": "Нужна передышка и восстановление после перегрузки.",
     "rev": "Возвращение к активности даётся тяжело; напряжение накопилось.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/sw04.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/sw04.jpg"
   },
   {
     "id": "sw05",
@@ -713,7 +713,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: конфликт, победа любой ценой",
     "up": "Даже выигранный спор может ухудшить отношения.",
     "rev": "Есть шанс выйти из конфликта, отказавшись от борьбы за правоту.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/sw05.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/sw05.jpg"
   },
   {
     "id": "sw06",
@@ -726,7 +726,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: переход, отдаление",
     "up": "Постепенный уход от сложного периода ведёт к спокойствию.",
     "rev": "Трудно оставить прежний конфликт и двигаться дальше.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/sw06.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/sw06.jpg"
   },
   {
     "id": "sw07",
@@ -739,7 +739,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: скрытность, стратегия",
     "up": "Не всё говорится напрямую; учитывай реальные действия.",
     "rev": "Тайна раскрывается или пора отказаться от обходных путей.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/sw07.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/sw07.jpg"
   },
   {
     "id": "sw08",
@@ -752,7 +752,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: ограничения, тревога",
     "up": "Страхи сужают пространство решений сильнее реальных препятствий.",
     "rev": "Появляется возможность пересмотреть навязанные себе ограничения.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/sw08.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/sw08.jpg"
   },
   {
     "id": "sw09",
@@ -765,7 +765,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: беспокойство, бессонница",
     "up": "Воображение рисует тяжёлые сценарии; не путай мысль с фактом.",
     "rev": "Тревога начинает отпускать или становится заметной потребность в помощи.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/sw09.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/sw09.jpg"
   },
   {
     "id": "sw10",
@@ -778,7 +778,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: завершение, предел",
     "up": "Определённый этап достиг болезненного предела и требует завершения.",
     "rev": "Начинается восстановление после сложного финала.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/sw10.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/sw10.jpg"
   },
   {
     "id": "sw11",
@@ -791,7 +791,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: наблюдение, вопросы",
     "up": "Любопытство и внимательность помогают разобраться в новой информации.",
     "rev": "Подозрительность или поверхностные сведения подрывают доверие.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/sw11.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/sw11.jpg"
   },
   {
     "id": "sw12",
@@ -804,7 +804,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: прямота, напор",
     "up": "Быстрая интеллектуальная инициатива может изменить положение.",
     "rev": "Поспешные слова и резкие поступки провоцируют конфликт.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/sw12.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/sw12.jpg"
   },
   {
     "id": "sw13",
@@ -817,7 +817,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: границы, трезвость",
     "up": "Разумное решение и честные границы помогают видеть суть.",
     "rev": "Холодность или излишняя критика перекрывают диалог.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/sw13.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/sw13.jpg"
   },
   {
     "id": "sw14",
@@ -830,7 +830,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: рациональность, принцип",
     "up": "Объективные критерии важнее эмоционального давления.",
     "rev": "Чрезмерный контроль или непреклонность делают решение несправедливым.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/sw14.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/sw14.jpg"
   },
   {
     "id": "pe01",
@@ -843,7 +843,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: возможность, деньги",
     "up": "Появляется практический шанс улучшить материальное положение.",
     "rev": "Хорошая возможность рискует потеряться без подготовки.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/pe01.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/pe01.jpg"
   },
   {
     "id": "pe02",
@@ -856,7 +856,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: баланс, ресурсы",
     "up": "Несколько обязательств можно удержать при грамотном планировании.",
     "rev": "Перегрузка и несоответствие ресурсов задачам требуют пересмотра плана.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/pe02.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/pe02.jpg"
   },
   {
     "id": "pe03",
@@ -869,7 +869,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: команда, мастерство",
     "up": "Навык и сотрудничество дают шанс на признание качества труда.",
     "rev": "Недостаточная координация мешает реализовать способности.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/pe03.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/pe03.jpg"
   },
   {
     "id": "pe04",
@@ -882,7 +882,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: сохранение, контроль",
     "up": "Осторожное управление ресурсами создаёт безопасность.",
     "rev": "Страх потери заставляет слишком крепко держаться за привычное.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/pe04.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/pe04.jpg"
   },
   {
     "id": "pe05",
@@ -895,7 +895,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: нехватка, поддержка",
     "up": "Материальная или эмоциональная трудность требует поиска поддержки.",
     "rev": "Появляется путь к выходу из дефицита и одиночества.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/pe05.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/pe05.jpg"
   },
   {
     "id": "pe06",
@@ -908,7 +908,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: обмен, справедливость",
     "up": "Ресурсы распределяются; оцени взаимность вклада.",
     "rev": "Взаимопомощь становится неравной или зависит от скрытых условий.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/pe06.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/pe06.jpg"
   },
   {
     "id": "pe07",
@@ -921,7 +921,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: ожидание, оценка",
     "up": "Результат растёт постепенно, пора проверить отдачу вложений.",
     "rev": "Сомнения в окупаемости требуют изменить подход.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/pe07.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/pe07.jpg"
   },
   {
     "id": "pe08",
@@ -934,7 +934,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: практика, дисциплина",
     "up": "Повторение и улучшение навыка создают профессиональную ценность.",
     "rev": "Рутина истощает, а качество страдает от отсутствия смысла.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/pe08.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/pe08.jpg"
   },
   {
     "id": "pe09",
@@ -947,7 +947,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: независимость, достаток",
     "up": "Устойчивость рождается из собственных навыков и границ.",
     "rev": "Материальная независимость может казаться менее прочной, чем хотелось.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/pe09.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/pe09.jpg"
   },
   {
     "id": "pe10",
@@ -960,7 +960,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: наследие, долгосрочность",
     "up": "Фундамент достатка строится через системность и общие ценности.",
     "rev": "Ожидания стабильности сталкиваются с семейными или финансовыми разногласиями.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/pe10.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/pe10.jpg"
   },
   {
     "id": "pe11",
@@ -973,7 +973,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: обучение, предложение",
     "up": "Практический интерес стоит превратить в учебный или рабочий план.",
     "rev": "Без конкретных действий перспективный замысел остаётся незрелым.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/pe11.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/pe11.jpg"
   },
   {
     "id": "pe12",
@@ -986,7 +986,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: надёжность, методичность",
     "up": "Медленный, последовательный труд укрепляет результат.",
     "rev": "Излишняя осторожность или рутина мешают продвижению.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/pe12.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/pe12.jpg"
   },
   {
     "id": "pe13",
@@ -999,7 +999,7 @@ export const CARDS = [
     "revKeywords": "теневая сторона: забота, стабильность",
     "up": "Внимание к реальным потребностям помогает создать комфорт.",
     "rev": "Чужие ожидания и заботы вытесняют собственные нужды.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/pe13.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/pe13.jpg"
   },
   {
     "id": "pe14",
@@ -1012,6 +1012,6 @@ export const CARDS = [
     "revKeywords": "теневая сторона: ресурсы, ответственность",
     "up": "Опыт и дисциплина помогают распоряжаться деньгами и решениями.",
     "rev": "Стремление к статусу и контролю может вредить гибкости.",
-    "image": "https://petaloverflow.github.io/tarot-api/cards/pe14.jpg"
+    "image": "https://raw.githubusercontent.com/sixseeds/tarot-api/main/cards/pe14.jpg"
   }
 ];
