@@ -3,6 +3,7 @@ import { CARDS } from './cards.js';
 const STORAGE = 'arcanum-readings-v1';
 const SETTINGS = 'arcanum-settings-v1';
 const ACCESS = 'arcanum-ai-access-v1';
+const AI_ENDPOINT = 'https://arcanum-tarot-ai.kunicin27522.workers.dev';
 const SPREADS = {
   one: ['Главный символ ситуации'],
   three: ['Что привело к ситуации', 'Что происходит сейчас', 'Куда направить внимание'],
@@ -141,7 +142,7 @@ function sanitizeEndpoint(str){
 }
 async function aiInterpret(){
   if(!reading)return;
-  const endpoint=getSettings().endpoint||'';
+  const endpoint=getSettings().endpoint||AI_ENDPOINT;
   if(!endpoint){$('#settingsDialog').showModal();notify('Сначала настрой серверный AI-прокси, либо используй бесплатную трактовку ниже карт.');return;}
   const access=sessionStorage.getItem(ACCESS)||'';
   if(!access){$('#settingsDialog').showModal();notify('Введи личный пароль доступа к AI в настройках. Это не ключ Groq.');return;}
@@ -166,7 +167,7 @@ function initialize(){
   $('#drawButton').addEventListener('click',draw);
   $('#againButton').addEventListener('click',()=>{$('#resultSection').classList.add('hidden');$('#question').focus();$('.question-panel').scrollIntoView({behavior:'smooth'});});
   $('#copyResult').addEventListener('click',async()=>{if(!reading)return;try{await navigator.clipboard.writeText(toPlainText(reading));notify('Расклад скопирован.');}catch{notify('Буфер обмена недоступен.');}});
-  $('#settingsOpen').addEventListener('click',()=>{$('#endpoint').value=getSettings().endpoint||'';$('#aiAccess').value='';$('#aiAccess').placeholder=sessionStorage.getItem(ACCESS)?'Пароль уже введён для этой вкладки':'Личный пароль Worker';$('#settingsDialog').showModal();});
+  $('#settingsOpen').addEventListener('click',()=>{$('#endpoint').value=getSettings().endpoint||AI_ENDPOINT;$('#aiAccess').value='';$('#aiAccess').placeholder=sessionStorage.getItem(ACCESS)?'Пароль уже введён для этой вкладки':'Личный пароль Worker';$('#settingsDialog').showModal();});
   $('#settingsClose').addEventListener('click',()=>$('#settingsDialog').close());
   $('#settingsDialog').addEventListener('click',e=>{if(e.target===$('#settingsDialog'))$('#settingsDialog').close();});
   $('#settingsSave').addEventListener('click',()=>{try{const endpoint=sanitizeEndpoint($('#endpoint').value);localStorage.setItem(SETTINGS,JSON.stringify({endpoint}));if($('#aiAccess').value.trim())sessionStorage.setItem(ACCESS,$('#aiAccess').value.trim());$('#aiAccess').value='';$('#settingsDialog').close();notify(endpoint?'AI-прокси сохранён.':'Настройки сохранены.');}catch(e){notify(e.message);}});
