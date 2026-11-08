@@ -86,7 +86,13 @@ function renderReading(r,scroll=true){
   r.cards.forEach((entry,i)=>{
     const c=cardInfo(entry);const article=document.createElement('article');article.className='reading-card';article.style.setProperty('--card-index',i);
     article.innerHTML=`<div class="card-art"><img loading="lazy" src="${c.image}" class="${entry.reversed?'reversed':''}" alt="${escapeHTML(c.name)}"><div class="art-fallback"><span>✧</span><strong>${escapeHTML(c.name)}</strong></div></div><div class="card-position">${escapeHTML(SPREADS[r.spread][i])}</div><h4>${escapeHTML(c.name)}</h4><div class="card-orientation">${entry.reversed?'↕ Перевёрнутая':'↑ Прямая'}</div>`;
-    const img=article.querySelector('img');img.addEventListener('error',()=>{img.style.display='none';article.querySelector('.art-fallback').style.display='flex';},{once:true});
+    const img=article.querySelector('img');
+    // Independent CDN fallback if GitHub raw image delivery is blocked or times out.
+    let imageRetry=0;
+    img.addEventListener('error',()=>{
+      if(imageRetry++===0){img.src=`https://cdn.jsdelivr.net/gh/sixseeds/tarot-api@main/cards/${c.id}.jpg`;return;}
+      img.style.display='none';article.querySelector('.art-fallback').style.display='flex';
+    });
     grid.appendChild(article);
   });
   $('#aiOutput').classList.add('hidden');$('#aiOutput').textContent='';
