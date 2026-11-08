@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#100f1b">
+  <meta name="description" content="ARCANUM — честные расклады Таро Уэйта, психологические трактовки и личный дневник. Без фатализма и подгонки карт.">
+  <title>ARCANUM — Таро без подгонки</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="ambient ambient-a" aria-hidden="true"></div><div class="ambient ambient-b" aria-hidden="true"></div>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#home" aria-label="ARCANUM — на главную"><span class="brand-glyph">✦</span><span>ARCANUM<small>ТАРО БЕЗ ПОДГОНКИ</small></span></a>
+      <nav class="top-nav" aria-label="Навигация">
+        <button class="nav-link active" data-view="home" type="button">Расклад</button>
+        <button class="nav-link" data-view="journal" type="button">Дневник <span class="journal-count" id="journalCount">0</span></button>
+      </nav>
+      <button class="icon-button" id="settingsOpen" type="button" aria-label="Настройки" title="Настройки">⚙</button>
+    </header>
+
+    <main>
+      <section class="view" id="homeView">
+        <div class="hero">
+          <div class="eyebrow"><span class="eyebrow-line"></span> КЛАССИЧЕСКОЕ ТАРО УЭЙТА <span class="eyebrow-line"></span></div>
+          <h1>Вопросы, на которые<br><em>хочется найти ответ.</em></h1>
+          <p class="hero-text">78 карт. Случайный выбор. Психологический разбор без мистических гарантий — и без подгонки результата под историю.</p>
+          <div class="hero-points"><span>✧ 78 оригинальных арканов</span><span>✧ Прямые и перевёрнутые</span><span>✧ История раскладов</span></div>
+        </div>
+        <div class="reader-layout">
+          <section class="glass question-panel" aria-labelledby="questionTitle">
+            <div class="panel-heading"><span class="step">01</span><div><p class="small-label">НАЧАЛО РАСКЛАДА</p><h2 id="questionTitle">Что тебя волнует?</h2></div></div>
+            <label class="field-label" for="question">Твой вопрос</label>
+            <textarea id="question" maxlength="800" rows="4" placeholder="Например: Какие перспективы у моего нового проекта в ближайшие три месяца?"></textarea>
+            <div class="field-caption"><span>Лучше задавать открытый и конкретный вопрос</span><span id="questionCounter">0 / 800</span></div>
+            <label class="field-label">Тема</label>
+            <div class="chip-group" id="categoryGroup" role="group" aria-label="Тема вопроса">
+              <button class="chip selected" data-category="Общее" type="button">✦ Общее</button>
+              <button class="chip" data-category="Отношения" type="button">♡ Отношения</button>
+              <button class="chip" data-category="Карьера" type="button">↗ Карьера</button>
+              <button class="chip" data-category="Деньги" type="button">◈ Деньги</button>
+              <button class="chip" data-category="Выбор" type="button">⇄ Выбор</button>
+            </div>
+            <label class="field-label spread-label">Формат расклада</label>
+            <div class="spread-options" id="spreadOptions" role="group" aria-label="Количество карт">
+              <button class="spread-option" data-spread="one" type="button"><span class="spread-icon">✧</span><span><strong>1 карта</strong><small>Быстрый ответ</small></span></button>
+              <button class="spread-option selected" data-spread="three" type="button"><span class="spread-icon">✧✧✧</span><span><strong>3 карты</strong><small>Суть ситуации</small></span></button>
+              <button class="spread-option" data-spread="five" type="button"><span class="spread-icon">✧✧✧✧✧</span><span><strong>5 карт</strong><small>Глубокий анализ</small></span></button>
+              <button class="spread-option" data-spread="seven" type="button"><span class="spread-icon">✧✧✧✧✧✧✧</span><span><strong>7 карт</strong><small>Полная картина</small></span></button>
+            </div>
+            <button class="primary-button" id="drawButton" type="button">Открыть карты <span>✦</span></button>
+            <p class="under-button">Выбор карт производится браузером случайно. ИИ не выбирает и не меняет карты.</p>
+          </section>
+          <aside class="table-side" aria-label="Колода Таро">
+            <p class="small-label centered">НА СТОЛЕ — ТВОЯ КОЛОДА</p>
+            <div class="deck-display" aria-hidden="true"><div class="backcard left-card"><div class="card-back-inside">✦</div></div><div class="backcard center-card"><div class="card-back-inside"><span>☼</span></div></div><div class="backcard right-card"><div class="card-back-inside">✦</div></div></div>
+            <div class="deck-footer"><span class="deck-orb">✧</span><div><strong>Сначала — случайность.</strong><small>Затем — интерпретация.</small></div></div>
+            <div class="line-details"><span>РИСУНКИ ПАМЕЛЫ КОЛМАН СМИТ</span><span>1909 · RIDER–WAITE–SMITH</span></div>
+          </aside>
+        </div>
+        <section id="resultSection" class="result-section hidden" aria-live="polite">
+          <div class="result-top"><div><p class="small-label">ТВОЙ РАСКЛАД</p><h2>Карты открыты</h2></div><div class="result-controls"><button class="secondary-button" id="copyResult" type="button">⧉ Скопировать</button><button class="secondary-button" id="againButton" type="button">↻ Новый</button></div></div>
+          <div class="result-question" id="resultQuestion"></div>
+          <div class="cards-grid" id="cardsGrid"></div>
+          <div class="interpretation-wrap"><div class="glass analysis-panel"><p class="small-label">ЧТЕНИЕ РАСКЛАДА</p><h3>Что показывают карты</h3><div id="interpretation"></div></div>
+            <aside class="insight-side"><div class="side-tile"><span class="side-tile-icon">✧</span><strong>Зафиксированный результат</strong><p>После вытяжки карты не меняются. В дневнике остаются вопрос, позиции и положение каждого аркана.</p></div><div class="side-tile"><span class="side-tile-icon">◈</span><strong>Без утверждений о чужих мыслях</strong><p>Таро — повод посмотреть на ситуацию иначе. Оно не устанавливает факты и не гарантирует будущее.</p></div></aside></div>
+          <div class="ai-action glass"><div><p class="small-label">ДОПОЛНИТЕЛЬНЫЙ АНАЛИЗ</p><h3>AI-таролог</h3><p>Подключается через отдельный защищённый серверный API. В базовом режиме всё работает бесплатно и без ключей.</p></div><button class="secondary-button" type="button" id="aiButton">✧ Глубокий разбор</button></div>
+          <div id="aiOutput" class="ai-output hidden" aria-live="polite"></div>
+        </section>
+      </section>
+
+      <section class="view hidden journal-view" id="journalView">
+        <div class="section-intro"><p class="small-label">ТВОЯ ИСТОРИЯ</p><h1>Дневник <em>раскладов.</em></h1><p>Все прошлые вытяжки сохранены только в этом браузере. Карты и трактовки доступны без регистрации.</p></div>
+        <div id="journalEntries" class="journal-entries"></div>
+        <button type="button" id="clearJournal" class="text-danger">Удалить всю историю</button>
+      </section>
+    </main>
+    <footer class="footer"><span>✦ ARCAnum · создано для исследования, а не предсказаний</span><span>Арт: Pamela Colman Smith · Rider–Waite–Smith (1909)</span></footer>
+  </div>
+
+  <dialog class="settings-dialog" id="settingsDialog" aria-labelledby="settingsTitle"><div class="modal-top"><div><p class="small-label">НАСТРОЙКИ</p><h2 id="settingsTitle">AI-таролог</h2></div><button class="icon-button" type="button" id="settingsClose" aria-label="Закрыть">✕</button></div>
+    <p>Сайт полностью работает без AI. Если позже подключить свой серверный прокси для бесплатного LLM API, появится расширенная интерпретация расклада.</p>
+    <label class="field-label" for="endpoint">Адрес твоего серверного AI-прокси (HTTPS)</label><input id="endpoint" type="url" placeholder="https://твой-worker.workers.dev" autocomplete="off">
+    <p class="settings-note">Не вводи здесь ключ Groq, Gemini или OpenRouter. На GitHub Pages ключи нельзя хранить безопасно. Адрес прокси хранится только в этом браузере.</p>
+    <div class="modal-actions"><button class="secondary-button" id="endpointClear" type="button">Очистить</button><button class="primary-button" id="settingsSave" type="button">Сохранить <span>✓</span></button></div>
+  </dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
