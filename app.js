@@ -2,6 +2,7 @@ import { CARDS } from './cards.js';
 
 const STORAGE = 'arcanum-readings-v1';
 const SETTINGS = 'arcanum-settings-v1';
+const ACCESS = 'arcanum-ai-access-v1';
 const SPREADS = {
   one: ['Главный символ ситуации'],
   three: ['Что привело к ситуации', 'Что происходит сейчас', 'Куда направить внимание'],
@@ -142,11 +143,13 @@ async function aiInterpret(){
   if(!reading)return;
   const endpoint=getSettings().endpoint||'';
   if(!endpoint){$('#settingsDialog').showModal();notify('Сначала настрой серверный AI-прокси, либо используй бесплатную трактовку ниже карт.');return;}
+  const access=sessionStorage.getItem(ACCESS)||'';
+  if(!access){$('#settingsDialog').showModal();notify('Введи личный пароль доступа к AI в настройках. Это не ключ Groq.');return;}
   const btn=$('#aiButton'),output=$('#aiOutput');btn.disabled=true;btn.textContent='Думаю над раскладом…';output.classList.remove('hidden');output.textContent='Составляю глубокую интерпретацию…';
   try{
     const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),45000);
     let response;
-    try{response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:reading.question,category:reading.category,cards:reading.cards.map((e,i)=>({name:cardInfo(e).name,position:SPREADS[reading.spread][i],orientation:orientation(e),meaning:meaning(e)}))}),signal:controller.signal});}
+    try{response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','X-Arcanum-Access':access},body:JSON.stringify({question:reading.question,category:reading.category,cards:reading.cards.map((e,i)=>({name:cardInfo(e).name,position:SPREADS[reading.spread][i],orientation:orientation(e),meaning:meaning(e)}))}),signal:controller.signal});}
     finally{clearTimeout(timer);}
     const json=await response.json().catch(()=>({}));
     if(!response.ok)throw new Error(json.error||`Ошибка сервера: ${response.status}`);
@@ -163,11 +166,11 @@ function initialize(){
   $('#drawButton').addEventListener('click',draw);
   $('#againButton').addEventListener('click',()=>{$('#resultSection').classList.add('hidden');$('#question').focus();$('.question-panel').scrollIntoView({behavior:'smooth'});});
   $('#copyResult').addEventListener('click',async()=>{if(!reading)return;try{await navigator.clipboard.writeText(toPlainText(reading));notify('Расклад скопирован.');}catch{notify('Буфер обмена недоступен.');}});
-  $('#settingsOpen').addEventListener('click',()=>{$('#endpoint').value=getSettings().endpoint||'';$('#settingsDialog').showModal();});
+  $('#settingsOpen').addEventListener('click',()=>{$('#endpoint').value=getSettings().endpoint||'';$('#aiAccess').value='';$('#aiAccess').placeholder=sessionStorage.getItem(ACCESS)?'Пароль уже введён для этой вкладки':'Личный пароль Worker';$('#settingsDialog').showModal();});
   $('#settingsClose').addEventListener('click',()=>$('#settingsDialog').close());
   $('#settingsDialog').addEventListener('click',e=>{if(e.target===$('#settingsDialog'))$('#settingsDialog').close();});
-  $('#settingsSave').addEventListener('click',()=>{try{const endpoint=sanitizeEndpoint($('#endpoint').value);localStorage.setItem(SETTINGS,JSON.stringify({endpoint}));$('#settingsDialog').close();notify(endpoint?'AI-прокси сохранён.':'Настройки сохранены.');}catch(e){notify(e.message);}});
-  $('#endpointClear').addEventListener('click',()=>{$('#endpoint').value='';localStorage.removeItem(SETTINGS);notify('Адрес прокси очищен.');});
+  $('#settingsSave').addEventListener('click',()=>{try{const endpoint=sanitizeEndpoint($('#endpoint').value);localStorage.setItem(SETTINGS,JSON.stringify({endpoint}));if($('#aiAccess').value.trim())sessionStorage.setItem(ACCESS,$('#aiAccess').value.trim());$('#aiAccess').value='';$('#settingsDialog').close();notify(endpoint?'AI-прокси сохранён.':'Настройки сохранены.');}catch(e){notify(e.message);}});
+  $('#endpointClear').addEventListener('click',()=>{$('#endpoint').value='';$('#aiAccess').value='';localStorage.removeItem(SETTINGS);sessionStorage.removeItem(ACCESS);notify('Адрес и пароль доступа очищены.');});
   $('#aiButton').addEventListener('click',aiInterpret);
   $('#clearJournal').addEventListener('click',()=>{if(confirm('Удалить все сохранённые расклады из этого браузера?')){localStorage.removeItem(STORAGE);renderJournal();updateCount();notify('История удалена.');}});
   updateCount();
