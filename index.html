@@ -85,6 +85,8 @@
   <dialog class="settings-dialog" id="settingsDialog" aria-labelledby="settingsTitle"><div class="modal-top"><div><p class="small-label">НАСТРОЙКИ</p><h2 id="settingsTitle">AI-таролог</h2></div><button class="icon-button" type="button" id="settingsClose" aria-label="Закрыть">✕</button></div>
     <p>Сайт полностью работает без AI. Если позже подключить свой серверный прокси для бесплатного LLM API, появится расширенная интерпретация расклада.</p>
     <label class="field-label" for="endpoint">Адрес твоего серверного AI-прокси (HTTPS)</label><input id="endpoint" type="url" placeholder="https://твой-worker.workers.dev" autocomplete="off">
+    <label class="field-label" for="aiAccess" style="margin-top:17px">Пароль доступа к AI (НЕ ключ Groq)</label><input id="aiAccess" type="password" placeholder="Личный пароль Worker" autocomplete="off" style="width:100%;border:1px solid rgba(217,202,224,.17);border-radius:10px;background:rgba(11,10,20,.48);color:var(--text);padding:15px 17px">
+    <p class="settings-note">Пароль хранится только до закрытия этой вкладки. Никогда не вставляй сюда ключ Groq.</p>
     <p class="settings-note">Не вводи здесь ключ Groq, Gemini или OpenRouter. На GitHub Pages ключи нельзя хранить безопасно. Адрес прокси хранится только в этом браузере.</p>
     <div class="modal-actions"><button class="secondary-button" id="endpointClear" type="button">Очистить</button><button class="primary-button" id="settingsSave" type="button">Сохранить <span>✓</span></button></div>
   </dialog>
