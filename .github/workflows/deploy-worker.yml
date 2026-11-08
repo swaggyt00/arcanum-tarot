@@ -31,9 +31,10 @@ jobs:
             exit 1
           fi
       - name: Deploy existing Cloudflare Worker
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: 98bfa1862ebd92f0b5ec8bc3d56413e5
+          wranglerVersion: "4.158.0"
           workingDirectory: worker
           command: deploy
