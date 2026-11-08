@@ -18,6 +18,8 @@ function jsonResponse(data,status=200,origin=''){
 }
 export default {
   async fetch(request,env){
+    // Public non-sensitive health endpoint for deployment verification.
+    if(request.method==='GET'&&new URL(request.url).pathname==='/health')return jsonResponse({ok:true,service:'arcanum-tarot-ai',version:1});
     const allowed=String(env.ALLOWED_ORIGIN||'').replace(/\/$/,'');
     const origin=request.headers.get('Origin')||'';
     if(!allowed||!env.GROQ_API_KEY||!env.ACCESS_TOKEN||String(env.ACCESS_TOKEN).length<24)return jsonResponse({error:'Сервер не настроен: нужны ALLOWED_ORIGIN, GROQ_API_KEY и ACCESS_TOKEN (от 24 символов).'},503);
