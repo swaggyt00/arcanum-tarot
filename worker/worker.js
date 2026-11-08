@@ -20,10 +20,15 @@ export default {
   async fetch(request,env){
     const allowed=String(env.ALLOWED_ORIGIN||'').replace(/\/$/,'');
     const origin=request.headers.get('Origin')||'';
-    if(!allowed||!env.GROQ_API_KEY)return jsonResponse({error:'Сервер не настроен: укажи ALLOWED_ORIGIN и секрет GROQ_API_KEY.'},503);
+    if(!allowed||!env.GROQ_API_KEY||!env.ACCESS_TOKEN||String(env.ACCESS_TOKEN).length<24)return jsonResponse({error:'Сервер не настроен: нужны ALLOWED_ORIGIN, GROQ_API_KEY и ACCESS_TOKEN (от 24 символов).'},503);
     if(origin!==allowed)return jsonResponse({error:'Origin не разрешён.'},403);
-    if(request.method==='OPTIONS')return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':allowed,'Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Allow-Headers':'Content-Type','Access-Control-Max-Age':'600','Vary':'Origin'}});
+    if(request.method==='OPTIONS')return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':allowed,'Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Allow-Headers':'Content-Type, X-Arcanum-Access','Access-Control-Max-Age':'600','Vary':'Origin'}});
     if(request.method!=='POST')return jsonResponse({error:'Поддерживается только POST.'},405,allowed);
+    const supplied=request.headers.get('X-Arcanum-Access')||'';
+    const secret=String(env.ACCESS_TOKEN);
+    let mismatch=supplied.length===secret.length?0:1;
+    if(!mismatch){for(let i=0;i<secret.length;i++)mismatch|=supplied.charCodeAt(i)^secret.charCodeAt(i);}
+    if(mismatch)return jsonResponse({error:'Неверный пароль доступа к AI.'},401,allowed);
     if(Number(request.headers.get('Content-Length')||0)>12000)return jsonResponse({error:'Слишком большой запрос.'},413,allowed);
     try{
       const body=await request.json();
