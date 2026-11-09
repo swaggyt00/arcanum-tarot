@@ -37,29 +37,40 @@ try{
   console.log('AI Director live OK:',JSON.stringify(data))
   const twistUrl=url.replace(/\/game\/director$/, '/game/modifier')
   const twistPayload={
-    version:2,scenario:'afterdark',stage:0,risk:2,cardType:'dare',
+    version:3,scenario:'afterdark',stage:0,risk:2,cardType:'dare',
     chains:['chaos','social'],
     cardText:'Пятнадцать секунд рекламируй ночной перекус как дорогую вещь, используя голос, походку и мимику.',
-    allowedKinds:['dare-one-take','dare-no-pause','dare-quick-start'],
-    recentLabels:['НИ ОДНОГО СЛОВА'],
+    allowedAxes:['precision','sequence','constraint','tempo'],
+    recentLabels:['ПРЕДЫДУЩАЯ СЛОЖНОСТЬ'],
   }
-  const twistResponse=await fetch(twistUrl,{
-    method:'POST',
-    headers:{'Origin':'https://swaggyt00.github.io','Content-Type':'application/json'},
-    body:JSON.stringify(twistPayload),signal:controller.signal,
-  })
-  const twistData=await twistResponse.json().catch(()=>null)
-  console.log('AI Modifier live status:',twistResponse.status)
-  if(!twistResponse.ok)throw Error('Modifier endpoint rejected: '+JSON.stringify(twistData))
-  if(!twistPayload.allowedKinds.includes(twistData?.kind)||!twistData?.description||!twistData?.label)
-    throw Error('Invalid live modifier: '+JSON.stringify(twistData))
-  if(/вздох|подними брови|шепни|После выполнения|реакци[юя]/i.test(twistData.description)){
-    throw Error('Groq output was decorative, not difficult: '+JSON.stringify(twistData))
+  let liveTwist=null
+  for(let attempt=1;attempt<=3;attempt++){
+    const response=await fetch(twistUrl,{
+      method:'POST',
+      headers:{Origin:'https://swaggyt00.github.io','Content-Type':'application/json'},
+      body:JSON.stringify(twistPayload),
+      signal:controller.signal,
+    })
+    const candidate=await response.json().catch(()=>null)
+    console.log('Creative AI attempt',attempt,'status:',response.status,JSON.stringify(candidate))
+    if(response.status===422)continue // Rejected creativity is expected sometimes.
+    if(!response.ok)throw Error('AI modifier endpoint unavailable: '+JSON.stringify(candidate))
+    liveTwist=candidate
+    break
   }
-  if(!/(с первой попытки|без пауз|пять секунд)/i.test(twistData.description)){
-    throw Error('Groq output did not actually increase difficulty: '+JSON.stringify(twistData))
+  if(!liveTwist)throw Error('No creative modifier passed independent validation across three samples.')
+  if(!twistPayload.allowedAxes.includes(liveTwist.axis)
+    ||typeof liveTwist.label!=='string'||typeof liveTwist.description!=='string'){
+    throw Error('Invalid new AI modifier format: '+JSON.stringify(liveTwist))
   }
-  console.log('AI Difficulty live OK:',JSON.stringify(twistData))
+  if(/После выполнения|подними бров|вздохни|шепни\s*[«"]|подмигни/i.test(liveTwist.description)){
+    throw Error('Creative model drifted into irrelevant post-task gestures: '+JSON.stringify(liveTwist))
+  }
+  if(!/(кажд|без |ни разу|не повтор|не использ|только|ровно|минимум|чередуй|одновременн|два |две |три |конкретн)/i.test(liveTwist.description)){
+    throw Error('Creative modifier did not increase difficulty: '+JSON.stringify(liveTwist))
+  }
+  console.log('ORIGINAL AI MODIFIER PASSED:',JSON.stringify(liveTwist))
+
 }catch(error){
   console.error('AI Director smoke failed:',error)
   process.exitCode=1
