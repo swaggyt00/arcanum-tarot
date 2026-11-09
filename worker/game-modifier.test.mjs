@@ -21,7 +21,8 @@ const draft={
 }
 const approve={
   harder:true,relevant:true,compatible:true,noNewTask:true,
-  respectsBoundaries:true,nonDecorative:true,reason:'Вводит измеримый новый ритм и запрет повторов.',
+  respectsBoundaries:true,nonDecorative:true,feasible:true,naturalRussian:true,
+  reason:'Вводит измеримый новый ритм и запрет повторов.',
 }
 const req=(data=payload,orig=origin)=>new Request('https://example.workers.dev/game/modifier',{
   method:'POST',
@@ -160,5 +161,40 @@ test('a rejected draft gets a new creative attempt and can still pass review',as
     assert.equal(result.status,200)
     assert.equal(index,3)
     assert.equal((await result.json()).label,'НЕПОВТОРИМЫЙ ПИТЧ')
+  }finally{globalThis.fetch=old}
+})
+
+
+test('rejects impossible 15-second rhythm math even if reviewer would approve',async()=>{
+  const original=globalThis.fetch
+  const impossible={
+    ...draft,axis:'sequence',label:'ДЕВЯТЬ НЕПОВТОРИМЫХ СТИЛЕЙ',
+    description:'Во время рекламы каждые 3 секунды меняй стиль речи и не повторяй ни одного из 9 наборов приёмов.',
+  }
+  let calls=0
+  try{
+    globalThis.fetch=async()=>{calls++;return completion(impossible)}
+    const result=await handleGameModifier(req(),env,origin)
+    assert.equal(result.status,422)
+    assert.equal(calls,2,'Invalid timing must be caught before quality-review model')
+  }finally{globalThis.fetch=original}
+})
+
+test('rejects grammatically broken second intervals and overly permissive review',async()=>{
+  const old=globalThis.fetch
+  const bad={
+    ...draft,label:'НЕСОВМЕСТИМЫЕ СЕКУНДЫ',
+    description:'Во время рекламы каждый третий секунды обязательно меняй стиль речи и ни разу не повторяй аргументы.',
+  }
+  try{
+    let calls=0
+    globalThis.fetch=async()=>{calls++;return completion(bad)}
+    assert.equal((await handleGameModifier(req(),env,origin)).status,422)
+    assert.equal(calls,2)
+
+    calls=0
+    globalThis.fetch=async()=>completion(++calls%2===1?draft:{...approve,feasible:false})
+    assert.equal((await handleGameModifier(req(),env,origin)).status,422)
+    assert.equal(calls,4)
   }finally{globalThis.fetch=old}
 })
