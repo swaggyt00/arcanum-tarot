@@ -53,3 +53,6 @@
   .ai-reading h4{font-size:24px}
   .ai-card-note{padding:15px 16px}
 }
+
+/* Preserve intentional paragraph breaks in model-generated connected interpretation. */
+.ai-verdict p,.ai-connection p,.ai-card-note p,.ai-practical p{white-space:pre-line}

@@ -243,13 +243,15 @@ async function aiInterpret(r=reading,sequence=analysisSequence){
   if(!r||reading?.id!==r.id)return;
   renderPending();
   const controller=new AbortController();analysisController=controller;
-  const timeout=setTimeout(()=>controller.abort(),55000);
+  const timeout=setTimeout(()=>controller.abort(),85000);
   try{
     const response=await fetch(AI_ENDPOINT,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({question:r.question,category:r.category,cards:r.cards.map((entry,i)=>({
-        name:cardInfo(entry).name,position:SPREADS[r.spread][i],orientation:orientation(entry),meaning:meaning(entry)
+        name:cardInfo(entry).name,position:SPREADS[r.spread][i],orientation:orientation(entry),
+        meaning:meaning(entry),suit:cardInfo(entry).suit,arcana:cardInfo(entry).arcana,
+        archetype:cardInfo(entry).archetype
       }))}),signal:controller.signal
     });
     const result=await response.json().catch(()=>({}));
@@ -263,7 +265,7 @@ async function aiInterpret(r=reading,sequence=analysisSequence){
   }catch(err){
     if(controller.signal.aborted&&sequence!==analysisSequence)return;
     if(sequence!==analysisSequence||reading?.id!==r.id)return;
-    const message=controller.signal.aborted?'AI не ответил за 55 секунд. Попробуй повторить.':(err?.message||'Не удалось получить разбор.');
+    const message=controller.signal.aborted?'AI не ответил за 85 секунд. Попробуй повторить.':(err?.message||'Не удалось получить разбор.');
     renderFallback(r,'AI-анализ пока недоступен: '+message);
   }finally{
     clearTimeout(timeout);
