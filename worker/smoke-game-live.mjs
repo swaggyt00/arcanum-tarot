@@ -13,7 +13,7 @@ const payload={
     {type:'dare',risk:2,chains:['flirt'],skipped:false},
   ],
   candidates:[
-    {id:'v09-game-smoke-a',type:'dare',chains:['flirt'],score:42},
+    {id:'v09:couple-light-dare-001',type:'dare',chains:['flirt'],score:42},
     {id:'v09-game-smoke-b',type:'truth',chains:['confession'],score:32},
     {id:'v09-game-smoke-c',type:'dare',chains:['connection'],score:26},
   ],
