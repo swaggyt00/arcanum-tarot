@@ -77,6 +77,10 @@ const safeChain = value => typeof value === 'string' && /^[a-z-]{2,35}$/.test(va
 const performanceAction =
   /(танц|разыгра|изобраз|пантомим|реклам|парод|сыгра|спой|пой |театрал|подиум|позир|сцен[уаые]|покажи походк|покажи.*мимик|расскаж|произнес|прочитай|объясни|тост)/i
 const pauseRequired = /(пауза|паузу|паузами|останов|замри|замереть|задерж|подожди|дождись|по очереди|чередуй|сначала.*затем)/i
+const needsSpeech = /(скажи|шепни|назови|ответь|говори|произнес|вслух|команд|слово|спроси|объясни|расскаж|прочитай|тост|реклам|спой|деклам|перескаж|зачитай|объяви)/i
+const needsHands = /(рук|ладон|пальц|запяст|держ|массаж|стимуляц|сними|надень|возьми|полож|прикосн|косн|обним|открой|напиш|набери|покажи|обмен|поправ|сожми)/i
+const needsVision = /(смотри|взгляд|глаз|прочитай|покажи|экран|галере|фото|заметк|карта|мимик|одежд|аксессуар)/i
+const requiresMovement = /(встан|сяд|ляг|перейд|подой|отойд|шаг|танц|пройд|поверн|поз[ауеы]|положени|у стены|между ног|дистанц)/i
 
 function validateBody(body){
   if(!body||typeof body!=='object'||body.version!==2)return null
@@ -98,6 +102,10 @@ function validateBody(body){
   if(body.allowedKinds.includes('dare-no-pause')&&pauseRequired.test(body.cardText))return null
   if(body.scenario==='sex'&&body.allowedKinds.some(kind=>
     ['dare-silence','dare-eyes-closed','dare-one-take','dare-quick-start','dare-no-pause'].includes(kind)))return null
+  if(body.allowedKinds.includes('dare-silence') && needsSpeech.test(body.cardText))return null
+  if(body.allowedKinds.includes('dare-no-hands') && needsHands.test(body.cardText))return null
+  if(body.allowedKinds.includes('dare-eyes-closed') && (needsVision.test(body.cardText)||requiresMovement.test(body.cardText)))return null
+  if(body.allowedKinds.includes('dare-keep-position') && requiresMovement.test(body.cardText))return null
   if(!Array.isArray(body.recentLabels)||body.recentLabels.length>5
     ||body.recentLabels.some(x=>typeof x!=='string'||x.length>50||/[{}<>\u0000-\u001f]/.test(x)))return null
   if(body.allowedKinds.some(kind=>body.recentLabels.includes(RULES[kind].label)))return null
