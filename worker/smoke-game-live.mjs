@@ -35,6 +35,25 @@ try{
   }
   if(typeof data.intro!=='string'||!data.intro.trim())throw Error('AI intro missing')
   console.log('AI Director live OK:',JSON.stringify(data))
+  const twistUrl=url.replace(/\/game\/director$/, '/game/modifier')
+  const twistPayload={
+    version:1,scenario:'afterdark',stage:0,risk:2,cardType:'dare',
+    chains:['chaos','social'],
+    cardText:'Пятнадцать секунд рекламируй ночной перекус как дорогую вещь, используя голос, походку и мимику.',
+    allowedKinds:['reaction','performance'],
+    recentLabels:['НЕЛОВКАЯ ПАУЗА'],
+  }
+  const twistResponse=await fetch(twistUrl,{
+    method:'POST',
+    headers:{'Origin':'https://swaggyt00.github.io','Content-Type':'application/json'},
+    body:JSON.stringify(twistPayload),signal:controller.signal,
+  })
+  const twistData=await twistResponse.json().catch(()=>null)
+  console.log('AI Modifier live status:',twistResponse.status)
+  if(!twistResponse.ok)throw Error('Modifier endpoint rejected: '+JSON.stringify(twistData))
+  if(!twistPayload.allowedKinds.includes(twistData?.kind)||!twistData?.description||!twistData?.label)
+    throw Error('Invalid live modifier: '+JSON.stringify(twistData))
+  console.log('AI Modifier live OK:',JSON.stringify(twistData))
 }catch(error){
   console.error('AI Director smoke failed:',error)
   process.exitCode=1
