@@ -53,7 +53,7 @@
               <button class="spread-option" data-spread="seven" type="button"><span class="spread-icon">✧✧✧✧✧✧✧</span><span><strong>7 карт</strong><small>Полная картина</small></span></button>
             </div>
             <button class="primary-button" id="drawButton" type="button">Открыть карты <span>✦</span></button>
-            <p class="under-button">Выбор карт производится браузером случайно. ИИ не выбирает и не меняет карты.</p>
+            <p class="under-button">Карты выбираются случайно. Сразу после открытия начнётся AI-разбор; модель не меняет выпавшие карты.</p>
           </section>
           <aside class="table-side" aria-label="Колода Таро">
             <p class="small-label centered">НА СТОЛЕ — ТВОЯ КОЛОДА</p>
@@ -66,10 +66,20 @@
           <div class="result-top"><div><p class="small-label">ТВОЙ РАСКЛАД</p><h2>Карты открыты</h2></div><div class="result-controls"><button class="secondary-button" id="copyResult" type="button">⧉ Скопировать</button><button class="secondary-button" id="againButton" type="button">↻ Новый</button></div></div>
           <div class="result-question" id="resultQuestion"></div>
           <div class="cards-grid" id="cardsGrid"></div>
-          <div class="interpretation-wrap"><div class="glass analysis-panel"><p class="small-label">ЧТЕНИЕ РАСКЛАДА</p><h3>Что показывают карты</h3><div id="interpretation"></div></div>
-            <aside class="insight-side"><div class="side-tile"><span class="side-tile-icon">✧</span><strong>Зафиксированный результат</strong><p>После вытяжки карты не меняются. В дневнике остаются вопрос, позиции и положение каждого аркана.</p></div><div class="side-tile"><span class="side-tile-icon">◈</span><strong>Без утверждений о чужих мыслях</strong><p>Таро — повод посмотреть на ситуацию иначе. Оно не устанавливает факты и не гарантирует будущее.</p></div></aside></div>
-          <div class="ai-action glass"><div><p class="small-label">ДОПОЛНИТЕЛЬНЫЙ АНАЛИЗ</p><h3>AI-таролог</h3><p>Подключается через отдельный защищённый серверный API. В базовом режиме всё работает бесплатно и без ключей.</p></div><button class="secondary-button" type="button" id="aiButton">✧ Глубокий разбор</button></div>
-          <div id="aiOutput" class="ai-output hidden" aria-live="polite"></div>
+          <div class="interpretation-wrap">
+            <section class="glass analysis-panel" aria-labelledby="readingHeading">
+              <div class="ai-panel-heading">
+                <div><p class="small-label">ИНТЕРПРЕТАЦИЯ РАСКЛАДА</p><h3 id="readingHeading">Ответ на твой вопрос</h3></div>
+                <span class="ai-indicator" id="aiIndicator">AI-анализ</span>
+              </div>
+              <div id="aiStatus" class="ai-status hidden" role="status" aria-live="polite"></div>
+              <div id="interpretation" class="ai-reading" aria-live="polite"></div>
+              <div id="analysisActions" class="analysis-actions hidden">
+                <button type="button" class="secondary-button" id="retryAI">↻ Повторить анализ</button>
+                <button type="button" class="secondary-button" id="analysisSettings">⚙ Настройки AI</button>
+              </div>
+            </section>
+          </div>
         </section>
       </section>
 
@@ -83,7 +93,7 @@
   </div>
 
   <dialog class="settings-dialog" id="settingsDialog" aria-labelledby="settingsTitle"><div class="modal-top"><div><p class="small-label">НАСТРОЙКИ</p><h2 id="settingsTitle">AI-таролог</h2></div><button class="icon-button" type="button" id="settingsClose" aria-label="Закрыть">✕</button></div>
-    <p>Сайт полностью работает без AI. Если позже подключить свой серверный прокси для бесплатного LLM API, появится расширенная интерпретация расклада.</p>
+    <p>После открытия карт AI автоматически разбирает расклад. Для этого требуется личный пароль Worker; без него доступна краткая базовая трактовка.</p>
     <label class="field-label" for="endpoint">Адрес твоего серверного AI-прокси (HTTPS)</label><input id="endpoint" type="url" placeholder="https://твой-worker.workers.dev" autocomplete="off">
     <label class="field-label" for="aiAccess" style="margin-top:17px">Пароль доступа к AI (НЕ ключ Groq)</label><input id="aiAccess" type="password" placeholder="Личный пароль Worker" autocomplete="off" style="width:100%;border:1px solid rgba(217,202,224,.17);border-radius:10px;background:rgba(11,10,20,.48);color:var(--text);padding:15px 17px">
     <p class="settings-note">Пароль хранится только до закрытия этой вкладки. Никогда не вставляй сюда ключ Groq.</p>
