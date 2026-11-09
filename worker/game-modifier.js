@@ -74,7 +74,7 @@ function validateResult(data, parsed) {
   if(data.kind==='reaction'&&!/^После выполнения[, ]/i.test(description))return null
   if(data.kind==='performance'&&!/^Во время выполнения[, ]/i.test(description))return null
   if(parsed.cardType==='dare'&&/(без слов|молча|не разговаривая)/i.test(parsed.cardText)
-    &&/(?:скажи|произнеси|голосом|вслух|расскажи|назови)/i.test(description))return null
+    &&/(?:скажи|говори|произнеси|голосом|вслух|расскажи|назови)/i.test(description))return null
   if(/(?:вместо (?:этого|основного)|замени|отмени|пропусти|на одну минуту|на две минуты)/i.test(description))return null
   if(parsed.recentLabels.some(item=>item.toLowerCase()===label.toLowerCase()))return null
   return{kind:data.kind,label,description}
