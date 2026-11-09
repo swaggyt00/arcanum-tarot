@@ -38,3 +38,9 @@ jobs:
           wranglerVersion: "4.158.0"
           workingDirectory: worker
           command: deploy
+      - name: Setup Node for live smoke
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Verify game AI Director responds with real Groq selection
+        run: node worker/smoke-game-live.mjs
