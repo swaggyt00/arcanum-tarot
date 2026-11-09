@@ -29,6 +29,8 @@ let category = 'Общее';
 let spread = 'three';
 let reading = null;
 let toastTimeout;
+let analysisController = null;
+let analysisSequence = 0;
 
 const escapeHTML = (value) => String(value ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const getHistory = () => { try { const data=JSON.parse(localStorage.getItem(STORAGE)||'[]');return Array.isArray(data)?data:[];}catch{return [];} };
@@ -65,21 +67,119 @@ function buildAnalysis(r){
   else results.push('Прямые и перевёрнутые положения соседствуют: возможности и ограничения стоит рассматривать одновременно.');
   return results;
 }
-function renderInterpretation(r){
-  const el=$('#interpretation');el.replaceChildren();
-  r.cards.forEach((entry,index)=>{
-    const c=cardInfo(entry); const block=document.createElement('div');block.className='position-analysis';
-    block.innerHTML=`<h4><span>${index+1}.</span> ${escapeHTML(SPREADS[r.spread][index])} — ${escapeHTML(c.name)}</h4><p>${escapeHTML(meaning(entry))} <span class="subtone">${escapeHTML(c.archetype)}.</span></p>`;
-    el.appendChild(block);
+function makeNode(tag, className='', content=null){
+  const node=document.createElement(tag);
+  if(className)node.className=className;
+  if(content!==null)node.textContent=String(content);
+  return node;
+}
+function setAIState(label,muted=false,loading=false){
+  const indicator=$('#aiIndicator');indicator.textContent=label;
+  indicator.classList.toggle('is-muted',muted);
+  indicator.classList.toggle('is-loading',loading);
+}
+function setAnalysisActions(retry=false,settings=false){
+  $('#analysisActions').classList.toggle('hidden',!(retry||settings));
+  $('#retryAI').classList.toggle('hidden',!retry);
+  $('#analysisSettings').classList.toggle('hidden',!settings);
+}
+function renderPending(){
+  setAIState('Анализирую карты',false,true);
+  $('#aiStatus').classList.add('hidden');
+  setAnalysisActions(false,false);
+  const root=$('#interpretation');root.replaceChildren();
+  const line=makeNode('div','ai-loading');
+  line.appendChild(makeNode('span','ai-pulse','✦'));
+  const copy=makeNode('div');
+  copy.appendChild(makeNode('strong','','Собираю историю расклада…'));
+  copy.appendChild(makeNode('p','','Сопоставляю все карты и отвечаю на твой вопрос.'));
+  line.appendChild(copy);root.appendChild(line);
+}
+function renderStructured(r,a){
+  if(!a||typeof a.answer!=='string'||!a.answer.trim()||!Array.isArray(a.cards)||a.cards.length!==r.cards.length)throw new Error('AI вернул неполный разбор. Попробуй ещё раз.');
+  setAIState('AI-разбор готов');setAnalysisActions(false,false);
+  $('#aiStatus').classList.add('hidden');
+  const root=$('#interpretation');root.replaceChildren();
+  const verdict=makeNode('section','ai-verdict');
+  verdict.appendChild(makeNode('span','ai-kicker','Главный ответ'));
+  verdict.appendChild(makeNode('p','',a.answer));
+  root.appendChild(verdict);
+  if(a.pattern){
+    const block=makeNode('section','ai-connection');
+    block.appendChild(makeNode('h4','','Как складывается картина'));
+    block.appendChild(makeNode('p','',a.pattern));
+    root.appendChild(block);
+  }
+  const wrap=makeNode('section');
+  const heading=makeNode('div','ai-card-heading');
+  heading.appendChild(makeNode('h4','','Роль каждой карты'));
+  wrap.appendChild(heading);
+  const grid=makeNode('div','ai-card-grid');
+  r.cards.forEach((entry,i)=>{
+    const c=cardInfo(entry),note=makeNode('div','ai-card-note');
+    note.appendChild(makeNode('div','ai-position',(i+1)+'. '+SPREADS[r.spread][i]));
+    const title=makeNode('h5','',c.name+' · '+orientation(entry));
+    note.appendChild(title);
+    note.appendChild(makeNode('p','',String(a.cards[i]?.insight||meaning(entry))));
+    grid.appendChild(note);
   });
-  const summary=document.createElement('div');summary.className='analysis-summary';
-  const h=document.createElement('h3');h.textContent='Общий смысл расклада';summary.appendChild(h);
-  for(const s of buildAnalysis(r)){const p=document.createElement('p');p.textContent=s;summary.appendChild(p);}
-  const advice=document.createElement('p');advice.innerHTML=`<strong>Практический фокус.</strong> ${escapeHTML(CATEGORY_NOTES[r.category]||CATEGORY_NOTES['Общее'])}`;summary.appendChild(advice);
-  const question=document.createElement('p');question.innerHTML='<strong>Вопрос к себе.</strong> Какой один конкретный шаг можно сделать на основе этого размышления — без предположений о чужих мыслях?';summary.appendChild(question);
-  el.appendChild(summary);
+  wrap.appendChild(grid);root.appendChild(wrap);
+  if(a.nextStep){
+    const step=makeNode('section','ai-conclusion');
+    step.appendChild(makeNode('h4','','Что делать дальше'));
+    const focus=makeNode('div','ai-practical');
+    focus.appendChild(makeNode('p','',a.nextStep));
+    step.appendChild(focus);root.appendChild(step);
+  }
+  root.appendChild(makeNode('p','ai-caveat',a.uncertainty||'Карты предлагают символическую перспективу, а не гарантируют события или чужие решения.'));
+}
+function renderLegacy(r,raw){
+  setAIState('AI-разбор готов');setAnalysisActions(false,false);$('#aiStatus').classList.add('hidden');
+  const root=$('#interpretation');root.replaceChildren();
+  const blocks=String(raw).split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean);
+  for(const block of blocks){
+    if(/^-{2,}$/.test(block))continue;
+    const section=makeNode('div','ai-old-section');
+    const isHeading=/^#{1,5}\s/.test(block);
+    const cleaned=block.replace(/^#{1,5}\s*/,'').replace(/\*\*/g,'').replace(/^\s*[-*]\s+/gm,'• ').trim();
+    if(!cleaned)continue;
+    section.appendChild(makeNode(isHeading?'h4':'p','',cleaned));
+    root.appendChild(section);
+  }
+}
+function renderFallback(r,reason){
+  setAIState('Базовый разбор',true,false);setAnalysisActions(true,true);
+  const status=$('#aiStatus');status.textContent=reason;status.classList.remove('hidden');
+  const root=$('#interpretation');root.replaceChildren();
+  const intro=makeNode('div','ai-verdict');
+  intro.appendChild(makeNode('span','ai-kicker','Пока без AI'));
+  intro.appendChild(makeNode('p','','Карты уже выпали и сохранены. Ниже — их краткие значения, пока полный анализ недоступен.'));
+  root.appendChild(intro);
+  const heading=makeNode('div','ai-card-heading');heading.appendChild(makeNode('h4','','Значения выпавших карт'));root.appendChild(heading);
+  const grid=makeNode('div','ai-card-grid');
+  r.cards.forEach((entry,i)=>{
+    const block=makeNode('div','ai-card-note');
+    block.appendChild(makeNode('div','ai-position',SPREADS[r.spread][i]));
+    block.appendChild(makeNode('h5','',cardInfo(entry).name+' · '+orientation(entry)));
+    block.appendChild(makeNode('p','',meaning(entry)));grid.appendChild(block);
+  });
+  root.appendChild(grid);
+  root.appendChild(makeNode('p','ai-fallback-note','Нажми «Настройки AI» для ввода личного пароля или «Повторить анализ» после устранения ошибки.'));
+}
+function rememberAnalysis(r,analysis){
+  r.ai=analysis;
+  try{
+    const history=getHistory();
+    const index=history.findIndex(item=>item.id===r.id);
+    if(index>=0){history[index].ai=analysis;localStorage.setItem(STORAGE,JSON.stringify(history));}
+  }catch{notify('AI-разбор показан, но не удалось сохранить его в дневнике.');}
+}
+function stopAnalysis(){
+  analysisSequence++;
+  if(analysisController){analysisController.abort();analysisController=null;}
 }
 function renderReading(r,scroll=true){
+  stopAnalysis();
   reading=r;
   $('#resultSection').classList.remove('hidden');
   $('#resultQuestion').textContent=r.question;
@@ -97,8 +197,9 @@ function renderReading(r,scroll=true){
     });
     grid.appendChild(article);
   });
-  $('#aiOutput').classList.add('hidden');$('#aiOutput').textContent='';
-  renderInterpretation(r);
+  if(r.ai?.answer)renderStructured(r,r.ai);
+  else if(r.ai?.legacy)renderLegacy(r,r.ai.legacy);
+  else aiInterpret(r,analysisSequence);
   if(scroll)$('#resultSection').scrollIntoView({behavior:'smooth',block:'start'});
 }
 function saveReading(r){
@@ -115,8 +216,17 @@ function draw(){
   saveReading(r);renderReading(r);
 }
 function toPlainText(r){
-  const body=r.cards.map((entry,i)=>`${i+1}. ${SPREADS[r.spread][i]}: ${cardInfo(entry).name} — ${orientation(entry)}\n${meaning(entry)}`).join('\n\n');
-  return `ARCANUM · ${new Date(r.createdAt).toLocaleDateString('ru-RU')}\nВопрос: ${r.question}\nТема: ${r.category}\n\n${body}\n\nОбщий смысл:\n${buildAnalysis(r).join('\n')}\n\n${CATEGORY_NOTES[r.category]}\n\nТаро не определяет будущее и чужие мысли.`;
+  const lines=['ARCANUM · '+new Date(r.createdAt).toLocaleDateString('ru-RU'),'Вопрос: '+r.question,'Тема: '+r.category,''];
+  if(r.ai?.answer){
+    lines.push('Главный ответ:',r.ai.answer,'','Связи карт:',r.ai.pattern||'','');
+    r.cards.forEach((entry,i)=>lines.push((i+1)+'. '+SPREADS[r.spread][i]+' — '+cardInfo(entry).name+' ('+orientation(entry)+')',r.ai.cards[i]?.insight||meaning(entry),''));
+    lines.push('Что делать дальше:',r.ai.nextStep||'',r.ai.uncertainty||'');
+  }else if(r.ai?.legacy){
+    lines.push(r.ai.legacy);
+  }else{
+    r.cards.forEach((entry,i)=>lines.push((i+1)+'. '+SPREADS[r.spread][i]+' — '+cardInfo(entry).name+' ('+orientation(entry)+')',meaning(entry),''));
+  }
+  return lines.join('\n');
 }
 function setView(view){
   $('#homeView').classList.toggle('hidden',view!=='home');$('#journalView').classList.toggle('hidden',view!=='journal');
@@ -140,24 +250,45 @@ function sanitizeEndpoint(str){
   if(u.username||u.password)throw new Error('Не вставляй логины, пароли и API-ключи в адрес.');
   return u.toString().replace(/\/$/,'');
 }
-async function aiInterpret(){
-  if(!reading)return;
+async function aiInterpret(r=reading,sequence=analysisSequence){
+  if(!r||reading?.id!==r.id)return;
   const endpoint=getSettings().endpoint||AI_ENDPOINT;
-  if(!endpoint){$('#settingsDialog').showModal();notify('Сначала настрой серверный AI-прокси, либо используй бесплатную трактовку ниже карт.');return;}
-  const access=sessionStorage.getItem(ACCESS)||'';
-  if(!access){$('#settingsDialog').showModal();notify('Введи личный пароль доступа к AI в настройках. Это не ключ Groq.');return;}
-  const btn=$('#aiButton'),output=$('#aiOutput');btn.disabled=true;btn.textContent='Думаю над раскладом…';output.classList.remove('hidden');output.textContent='Составляю глубокую интерпретацию…';
+  const access=globalThis.sessionStorage?.getItem(ACCESS)||'';
+  if(!access){renderFallback(r,'Для автоматического AI-разбора один раз введи личный пароль Worker в настройках ⚙.');setAnalysisActions(false,true);return;}
+  renderPending();
+  const controller=new AbortController();analysisController=controller;
+  const timeout=setTimeout(()=>controller.abort(),55000);
   try{
-    const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),45000);
-    let response;
-    try{response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','X-Arcanum-Access':access},body:JSON.stringify({question:reading.question,category:reading.category,cards:reading.cards.map((e,i)=>({name:cardInfo(e).name,position:SPREADS[reading.spread][i],orientation:orientation(e),meaning:meaning(e)}))}),signal:controller.signal});}
-    finally{clearTimeout(timer);}
-    const json=await response.json().catch(()=>({}));
-    if(!response.ok)throw new Error(json.error||`Ошибка сервера: ${response.status}`);
-    if(typeof json.analysis!=='string'||!json.analysis.trim())throw new Error('Сервер не вернул текст разбора.');
-    output.textContent=json.analysis;
-  }catch(e){output.textContent='Не удалось выполнить запрос: '+e.message+'. Базовый расклад по-прежнему доступен.';}
-  finally{btn.disabled=false;btn.textContent='✧ Глубокий разбор';}
+    const response=await fetch(endpoint,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Arcanum-Access':access},
+      body:JSON.stringify({question:r.question,category:r.category,cards:r.cards.map((entry,i)=>({
+        name:cardInfo(entry).name,position:SPREADS[r.spread][i],orientation:orientation(entry),meaning:meaning(entry)
+      }))}),signal:controller.signal
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(result.error||'Ошибка AI-сервиса: '+response.status);
+    if(controller.signal.aborted||sequence!==analysisSequence||reading?.id!==r.id)return;
+    if(result.analysis&&typeof result.analysis==='object'){
+      renderStructured(r,result.analysis);rememberAnalysis(r,result.analysis);
+    }else if(typeof result.analysis==='string'&&result.analysis.trim()){
+      renderLegacy(r,result.analysis);rememberAnalysis(r,{legacy:result.analysis});
+    }else throw new Error('Сервер вернул пустой ответ.');
+  }catch(err){
+    if(controller.signal.aborted&&sequence!==analysisSequence)return;
+    if(sequence!==analysisSequence||reading?.id!==r.id)return;
+    const message=controller.signal.aborted?'AI не ответил за 55 секунд. Попробуй повторить.':(err?.message||'Не удалось получить разбор.');
+    renderFallback(r,'AI-анализ пока недоступен: '+message);
+  }finally{
+    clearTimeout(timeout);
+    if(analysisController===controller)analysisController=null;
+  }
+}
+function openAISettings(){
+  $('#endpoint').value=getSettings().endpoint||AI_ENDPOINT;
+  $('#aiAccess').value='';
+  $('#aiAccess').placeholder=globalThis.sessionStorage?.getItem(ACCESS)?'Пароль сохранён на время этой вкладки':'Личный пароль Worker';
+  $('#settingsDialog').showModal();
 }
 function initialize(){
   $('#question').addEventListener('input',()=>$('#questionCounter').textContent=`${$('#question').value.length} / 800`);
@@ -165,14 +296,15 @@ function initialize(){
   document.querySelectorAll('[data-spread]').forEach(btn=>btn.addEventListener('click',()=>{spread=btn.dataset.spread;document.querySelectorAll('[data-spread]').forEach(el=>el.classList.toggle('selected',el===btn));}));
   document.querySelectorAll('[data-view]').forEach(btn=>btn.addEventListener('click',()=>setView(btn.dataset.view)));
   $('#drawButton').addEventListener('click',draw);
-  $('#againButton').addEventListener('click',()=>{$('#resultSection').classList.add('hidden');$('#question').focus();$('.question-panel').scrollIntoView({behavior:'smooth'});});
+  $('#againButton').addEventListener('click',()=>{stopAnalysis();$('#resultSection').classList.add('hidden');$('#question').focus();$('.question-panel').scrollIntoView({behavior:'smooth'});});
   $('#copyResult').addEventListener('click',async()=>{if(!reading)return;try{await navigator.clipboard.writeText(toPlainText(reading));notify('Расклад скопирован.');}catch{notify('Буфер обмена недоступен.');}});
-  $('#settingsOpen').addEventListener('click',()=>{$('#endpoint').value=getSettings().endpoint||AI_ENDPOINT;$('#aiAccess').value='';$('#aiAccess').placeholder=sessionStorage.getItem(ACCESS)?'Пароль уже введён для этой вкладки':'Личный пароль Worker';$('#settingsDialog').showModal();});
+  $('#settingsOpen').addEventListener('click',openAISettings);
+  $('#analysisSettings').addEventListener('click',openAISettings);
+  $('#retryAI').addEventListener('click',()=>{if(!reading)return;stopAnalysis();aiInterpret(reading,analysisSequence);});
   $('#settingsClose').addEventListener('click',()=>$('#settingsDialog').close());
   $('#settingsDialog').addEventListener('click',e=>{if(e.target===$('#settingsDialog'))$('#settingsDialog').close();});
-  $('#settingsSave').addEventListener('click',()=>{try{const endpoint=sanitizeEndpoint($('#endpoint').value);localStorage.setItem(SETTINGS,JSON.stringify({endpoint}));if($('#aiAccess').value.trim())sessionStorage.setItem(ACCESS,$('#aiAccess').value.trim());$('#aiAccess').value='';$('#settingsDialog').close();notify(endpoint?'AI-прокси сохранён.':'Настройки сохранены.');}catch(e){notify(e.message);}});
-  $('#endpointClear').addEventListener('click',()=>{$('#endpoint').value='';$('#aiAccess').value='';localStorage.removeItem(SETTINGS);sessionStorage.removeItem(ACCESS);notify('Адрес и пароль доступа очищены.');});
-  $('#aiButton').addEventListener('click',aiInterpret);
+  $('#settingsSave').addEventListener('click',()=>{try{const endpoint=sanitizeEndpoint($('#endpoint').value);localStorage.setItem(SETTINGS,JSON.stringify({endpoint}));if($('#aiAccess').value.trim())globalThis.sessionStorage?.setItem(ACCESS,$('#aiAccess').value.trim());$('#aiAccess').value='';$('#settingsDialog').close();notify('Настройки AI сохранены.');if(reading&&!reading.ai){stopAnalysis();aiInterpret(reading,analysisSequence);}}catch(e){notify(e.message);}});
+  $('#endpointClear').addEventListener('click',()=>{$('#endpoint').value='';$('#aiAccess').value='';localStorage.removeItem(SETTINGS);globalThis.sessionStorage?.removeItem(ACCESS);notify('Адрес и пароль доступа очищены.');});
   $('#clearJournal').addEventListener('click',()=>{if(confirm('Удалить все сохранённые расклады из этого браузера?')){localStorage.removeItem(STORAGE);renderJournal();updateCount();notify('История удалена.');}});
   updateCount();
 }
