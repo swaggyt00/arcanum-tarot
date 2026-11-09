@@ -30,6 +30,13 @@ jobs:
             echo "::error::Set repository secret CLOUDFLARE_API_TOKEN before deployment."
             exit 1
           fi
+      - name: Setup Node for worker tests and live smoke
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Run Worker unit tests
+        working-directory: worker
+        run: npm test
       - name: Deploy existing Cloudflare Worker
         uses: cloudflare/wrangler-action@v4
         with:
@@ -38,9 +45,5 @@ jobs:
           wranglerVersion: "4.158.0"
           workingDirectory: worker
           command: deploy
-      - name: Setup Node for live smoke
-        uses: actions/setup-node@v6
-        with:
-          node-version: 22
       - name: Verify game AI Director responds with real Groq selection
         run: node worker/smoke-game-live.mjs
