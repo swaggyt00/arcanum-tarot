@@ -1,0 +1,43 @@
+name: Test ARCAnum
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app.js"
+      - "cards.js"
+      - "worker/**"
+      - "tests/**"
+      - ".github/workflows/test.yml"
+  pull_request:
+    paths:
+      - "app.js"
+      - "cards.js"
+      - "worker/**"
+      - "tests/**"
+      - ".github/workflows/test.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: JavaScript syntax
+        run: |
+          node --check app.js
+          node --check cards.js
+          node --check worker/worker.js
+      - name: Test drawing, auto AI, and Worker proxy
+        run: |
+          node tests/smoke.mjs
+          node tests/worker.mjs
