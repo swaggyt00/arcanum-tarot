@@ -4,5 +4,11 @@
   "compatibility_date": "2026-11-08",
   "vars": {
     "ALLOWED_ORIGIN": "https://swaggyt00.github.io"
+  },
+  "secrets": {
+    "required": [
+      "GROQ_API_KEY",
+      "ACCESS_TOKEN"
+    ]
   }
 }
