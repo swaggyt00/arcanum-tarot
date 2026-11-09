@@ -7,8 +7,33 @@
   },
   "secrets": {
     "required": [
-      "GROQ_API_KEY",
-      "ACCESS_TOKEN"
+      "GROQ_API_KEY"
     ]
-  }
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "AI_USAGE_BUDGET",
+        "class_name": "AIUsageBudget"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1-arcanum-public-budget",
+      "new_sqlite_classes": [
+        "AIUsageBudget"
+      ]
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "VISITOR_RATE_LIMITER",
+      "namespace_id": "77513925",
+      "simple": {
+        "limit": 3,
+        "period": 60
+      }
+    }
+  ]
 }
