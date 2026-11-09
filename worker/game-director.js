@@ -30,7 +30,8 @@ function respond(data, status, origin) {
   return new Response(JSON.stringify(data), { status, headers })
 }
 
-const safeToken = value => typeof value === 'string' && /^[a-z0-9-]{2,120}$/.test(value)
+// Legacy Director IDs are prefixed with v09:; the colon is a valid separator.
+const safeToken = value => typeof value === 'string' && /^[a-z0-9:-]{2,120}$/.test(value)
 const safeChain = value => typeof value === 'string' && /^[a-z-]{2,35}$/.test(value)
 
 function validateRequest(body) {
