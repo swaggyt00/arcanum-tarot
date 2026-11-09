@@ -81,7 +81,7 @@ test('rejects decorative reactions, after-task gestures and canned labels before
       globalThis.fetch=async()=>{calls++;return completion(candidate)}
       const response=await handleGameModifier(req(),env,origin)
       assert.equal(response.status,422)
-      assert.equal(calls,1,'A clearly invalid draft must not consume a second Groq call')
+      assert.equal(calls,2,'Each invalid draft may be retried once, but the judge must not see it')
     }
   }finally{globalThis.fetch=old}
 })
@@ -95,7 +95,7 @@ test('semantic quality reviewer rejects fake difficulty and contradictions',asyn
       return completion(count%2===1?draft:{...approve,harder:false,nonDecorative:false})
     }
     assert.equal((await handleGameModifier(req(),env,origin)).status,422)
-    assert.equal(count,2)
+    assert.equal(count,4,'Two drafts are independently reviewed and rejected')
   }finally{globalThis.fetch=old}
 })
 
@@ -136,4 +136,29 @@ test('rejects new constraints for explicit sexual physical Dare and protects tar
     body:JSON.stringify({question:'hello',cards:[]}),
   }),env)
   assert.equal(tarot.status,400)
+})
+
+
+test('a rejected draft gets a new creative attempt and can still pass review',async()=>{
+  const old=globalThis.fetch
+  let index=0
+  try{
+    globalThis.fetch=async (_url,options)=>{
+      const sent=JSON.parse(options.body)
+      index++
+      if(index===1)return completion({...draft,label:'ТОЛЬКО ОДИН ДУБЛЬ'})
+      if(index===2){
+        assert.match(sent.messages[1].content,/retryGuidance/)
+        return completion({
+          ...draft,label:'НЕПОВТОРИМЫЙ ПИТЧ',
+          description:'Каждые пять секунд называй новый аргумент за перекус, не повторяя ни одного довода и сохраняя уверенный тон.',
+        })
+      }
+      return completion(approve)
+    }
+    const result=await handleGameModifier(req(),env,origin)
+    assert.equal(result.status,200)
+    assert.equal(index,3)
+    assert.equal((await result.json()).label,'НЕПОВТОРИМЫЙ ПИТЧ')
+  }finally{globalThis.fetch=old}
 })

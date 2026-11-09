@@ -169,26 +169,33 @@ export async function handleGameModifier(request,env,origin){
     additionalProperties:false,
   }
   try{
-    const generated=await completeJSON(env,CREATOR,parsed,createSchema,'original_game_twist_v3',0.85,900)
-    if(generated.error)return respond({error:'Не удалось придумать условие.'},generated.error,origin)
-    const candidate=validateDraft(generated.value,parsed)
-    if(!candidate)return respond({error:'Условие не прошло первичную проверку сложности.'},422,origin)
+    // A draft that fails quality must not reach players. Give the author one
+    // creative retry instead of silently returning to a canned rule.
+    for(let attempt=0;attempt<2;attempt++){
+      const creativeInput=attempt===0?parsed:{
+        ...parsed,
+        retryGuidance:'Предыдущий вариант не прошёл проверку. Придумай ДРУГОЕ конкретное ограничение: оно должно измеримо усложнять выполнение исходной карточки, не добавлять новую задачу, быть 55–205 символов и не содержать декоративных жестов.',
+      }
+      const generated=await completeJSON(env,CREATOR,creativeInput,createSchema,'original_game_twist_v3',0.85,900)
+      if(generated.error)return respond({error:'Не удалось придумать условие.'},generated.error,origin)
+      const candidate=validateDraft(generated.value,parsed)
+      if(!candidate)continue
 
-    const reviewed=await completeJSON(env,REVIEWER,{
-      originalCard:parsed.cardText,
-      gameMode:parsed.scenario,
-      risk:parsed.risk,
-      cardType:parsed.cardType,
-      proposedCondition:candidate,
-    },reviewSchema,'game_twist_review_v3',0.1,550)
-    if(reviewed.error)return respond({error:'Не удалось проверить условие.'},reviewed.error,origin)
-    const judgment=reviewed.value
-    const criteria=['harder','relevant','compatible','noNewTask','respectsBoundaries','nonDecorative']
-    if(!judgment||criteria.some(k=>judgment[k]!==true)){
-      return respond({error:'Условие не улучшает сложность этой карточки.'},422,origin)
+      const reviewed=await completeJSON(env,REVIEWER,{
+        originalCard:parsed.cardText,
+        gameMode:parsed.scenario,
+        risk:parsed.risk,
+        cardType:parsed.cardType,
+        proposedCondition:candidate,
+      },reviewSchema,'game_twist_review_v3',0.1,550)
+      if(reviewed.error)return respond({error:'Не удалось проверить условие.'},reviewed.error,origin)
+      const judgment=reviewed.value
+      const criteria=['harder','relevant','compatible','noNewTask','respectsBoundaries','nonDecorative']
+      if(!judgment||criteria.some(k=>judgment[k]!==true))continue
+      const {axis,label,description}=candidate
+      return respond({axis,label,description},200,origin)
     }
-    const {axis,label,description}=candidate
-    return respond({axis,label,description},200,origin)
+    return respond({error:'Не нашлось достаточно хорошего усложнения.'},422,origin)
   }catch{
     return respond({error:'ИИ-условие временно недоступно.'},502,origin)
   }
