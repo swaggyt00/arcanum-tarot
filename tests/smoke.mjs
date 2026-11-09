@@ -21,11 +21,10 @@ const get=s=>{if(!dom.has(s))dom.set(s,new FakeEl(s));return dom.get(s);};
 get('#question').value='Какие перспективы у нового проекта?';
 const storage=new Map();
 let aiCalls=0;
-const access=new Map([['arcanum-ai-access-v1','test-strong-access-token']]);
-globalThis.sessionStorage={getItem:k=>access.get(k)??null,setItem:(k,v)=>access.set(k,v),removeItem:k=>access.delete(k)};
 globalThis.fetch=async (url,options)=>{
   aiCalls++;
   assert.match(url,/workers\.dev/);
+  assert.deepEqual(options.headers,{'Content-Type':'application/json'},'Visitors do not send passwords');
   const body=JSON.parse(options.body);
   const payload={answer:'Возможность есть, но она не гарантирована.',pattern:'Карты показывают взаимодействие возможностей и ограничений.',cards:body.cards.map(c=>({insight:'В позиции «'+c.position+'» эта карта указывает на важный фактор.'})),nextStep:'Уточни критерии.',uncertainty:'Карты не подтверждают решение работодателя.'};
   return {ok:true,json:async()=>({analysis:payload})};

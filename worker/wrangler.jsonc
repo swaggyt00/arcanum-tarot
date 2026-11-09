@@ -25,15 +25,5 @@
         "AIUsageBudget"
       ]
     }
-  ],
-  "ratelimits": [
-    {
-      "name": "VISITOR_RATE_LIMITER",
-      "namespace_id": "77513925",
-      "simple": {
-        "limit": 3,
-        "period": 60
-      }
-    }
   ]
 }

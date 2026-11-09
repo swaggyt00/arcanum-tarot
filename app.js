@@ -1,8 +1,6 @@
 import { CARDS } from './cards.js';
 
 const STORAGE = 'arcanum-readings-v1';
-const SETTINGS = 'arcanum-settings-v1';
-const ACCESS = 'arcanum-ai-access-v1';
 const AI_ENDPOINT = 'https://arcanum-tarot-ai.kunicin27522.workers.dev';
 const SPREADS = {
   one: ['Главный символ ситуации'],
@@ -34,7 +32,6 @@ let analysisSequence = 0;
 
 const escapeHTML = (value) => String(value ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const getHistory = () => { try { const data=JSON.parse(localStorage.getItem(STORAGE)||'[]');return Array.isArray(data)?data:[];}catch{return [];} };
-const getSettings = () => { try { return JSON.parse(localStorage.getItem(SETTINGS)||'{}'); } catch {return {};}};
 function notify(message){const el=$('#toast');el.textContent=message;el.classList.add('show');clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>el.classList.remove('show'),3200);}
 function randomBelow(max){
   if (!window.crypto?.getRandomValues) throw new Error('Для случайной вытяжки необходим безопасный HTTPS-контекст.');
@@ -78,15 +75,14 @@ function setAIState(label,muted=false,loading=false){
   indicator.classList.toggle('is-muted',muted);
   indicator.classList.toggle('is-loading',loading);
 }
-function setAnalysisActions(retry=false,settings=false){
-  $('#analysisActions').classList.toggle('hidden',!(retry||settings));
+function setAnalysisActions(retry=false){
+  $('#analysisActions').classList.toggle('hidden',!retry);
   $('#retryAI').classList.toggle('hidden',!retry);
-  $('#analysisSettings').classList.toggle('hidden',!settings);
 }
 function renderPending(){
   setAIState('Анализирую карты',false,true);
   $('#aiStatus').classList.add('hidden');
-  setAnalysisActions(false,false);
+  setAnalysisActions(false);
   const root=$('#interpretation');root.replaceChildren();
   const line=makeNode('div','ai-loading');
   line.appendChild(makeNode('span','ai-pulse','✦'));
@@ -97,7 +93,7 @@ function renderPending(){
 }
 function renderStructured(r,a){
   if(!a||typeof a.answer!=='string'||!a.answer.trim()||!Array.isArray(a.cards)||a.cards.length!==r.cards.length)throw new Error('AI вернул неполный разбор. Попробуй ещё раз.');
-  setAIState('AI-разбор готов');setAnalysisActions(false,false);
+  setAIState('AI-разбор готов');setAnalysisActions(false);
   $('#aiStatus').classList.add('hidden');
   const root=$('#interpretation');root.replaceChildren();
   const verdict=makeNode('section','ai-verdict');
@@ -134,7 +130,7 @@ function renderStructured(r,a){
   root.appendChild(makeNode('p','ai-caveat',a.uncertainty||'Карты предлагают символическую перспективу, а не гарантируют события или чужие решения.'));
 }
 function renderLegacy(r,raw){
-  setAIState('AI-разбор готов');setAnalysisActions(false,false);$('#aiStatus').classList.add('hidden');
+  setAIState('AI-разбор готов');setAnalysisActions(false);$('#aiStatus').classList.add('hidden');
   const root=$('#interpretation');root.replaceChildren();
   const blocks=String(raw).split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean);
   for(const block of blocks){
@@ -148,7 +144,7 @@ function renderLegacy(r,raw){
   }
 }
 function renderFallback(r,reason){
-  setAIState('Базовый разбор',true,false);setAnalysisActions(true,true);
+  setAIState('Базовый разбор',true,false);setAnalysisActions(true);
   const status=$('#aiStatus');status.textContent=reason;status.classList.remove('hidden');
   const root=$('#interpretation');root.replaceChildren();
   const intro=makeNode('div','ai-verdict');
@@ -164,7 +160,7 @@ function renderFallback(r,reason){
     block.appendChild(makeNode('p','',meaning(entry)));grid.appendChild(block);
   });
   root.appendChild(grid);
-  root.appendChild(makeNode('p','ai-fallback-note','Нажми «Настройки AI» для ввода личного пароля или «Повторить анализ» после устранения ошибки.'));
+  root.appendChild(makeNode('p','ai-fallback-note','Если сервис временно недоступен, можно нажать «Повторить анализ».'));
 }
 function rememberAnalysis(r,analysis){
   r.ai=analysis;
@@ -243,25 +239,15 @@ function renderJournal(){
     row.addEventListener('click',()=>{setView('home');renderReading(r);});list.appendChild(row);
   }
 }
-function sanitizeEndpoint(str){
-  if(!str.trim())return '';
-  const u=new URL(str.trim());
-  if(u.protocol!=='https:')throw new Error('Адрес должен начинаться с https://');
-  if(u.username||u.password)throw new Error('Не вставляй логины, пароли и API-ключи в адрес.');
-  return u.toString().replace(/\/$/,'');
-}
 async function aiInterpret(r=reading,sequence=analysisSequence){
   if(!r||reading?.id!==r.id)return;
-  const endpoint=getSettings().endpoint||AI_ENDPOINT;
-  const access=globalThis.sessionStorage?.getItem(ACCESS)||'';
-  if(!access){renderFallback(r,'Для автоматического AI-разбора один раз введи личный пароль Worker в настройках ⚙.');setAnalysisActions(false,true);return;}
   renderPending();
   const controller=new AbortController();analysisController=controller;
   const timeout=setTimeout(()=>controller.abort(),55000);
   try{
-    const response=await fetch(endpoint,{
+    const response=await fetch(AI_ENDPOINT,{
       method:'POST',
-      headers:{'Content-Type':'application/json','X-Arcanum-Access':access},
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({question:r.question,category:r.category,cards:r.cards.map((entry,i)=>({
         name:cardInfo(entry).name,position:SPREADS[r.spread][i],orientation:orientation(entry),meaning:meaning(entry)
       }))}),signal:controller.signal
@@ -284,12 +270,6 @@ async function aiInterpret(r=reading,sequence=analysisSequence){
     if(analysisController===controller)analysisController=null;
   }
 }
-function openAISettings(){
-  $('#endpoint').value=getSettings().endpoint||AI_ENDPOINT;
-  $('#aiAccess').value='';
-  $('#aiAccess').placeholder=globalThis.sessionStorage?.getItem(ACCESS)?'Пароль сохранён на время этой вкладки':'Личный пароль Worker';
-  $('#settingsDialog').showModal();
-}
 function initialize(){
   $('#question').addEventListener('input',()=>$('#questionCounter').textContent=`${$('#question').value.length} / 800`);
   document.querySelectorAll('[data-category]').forEach(btn=>btn.addEventListener('click',()=>{category=btn.dataset.category;document.querySelectorAll('[data-category]').forEach(el=>el.classList.toggle('selected',el===btn));}));
@@ -298,13 +278,7 @@ function initialize(){
   $('#drawButton').addEventListener('click',draw);
   $('#againButton').addEventListener('click',()=>{stopAnalysis();$('#resultSection').classList.add('hidden');$('#question').focus();$('.question-panel').scrollIntoView({behavior:'smooth'});});
   $('#copyResult').addEventListener('click',async()=>{if(!reading)return;try{await navigator.clipboard.writeText(toPlainText(reading));notify('Расклад скопирован.');}catch{notify('Буфер обмена недоступен.');}});
-  $('#settingsOpen').addEventListener('click',openAISettings);
-  $('#analysisSettings').addEventListener('click',openAISettings);
   $('#retryAI').addEventListener('click',()=>{if(!reading)return;stopAnalysis();aiInterpret(reading,analysisSequence);});
-  $('#settingsClose').addEventListener('click',()=>$('#settingsDialog').close());
-  $('#settingsDialog').addEventListener('click',e=>{if(e.target===$('#settingsDialog'))$('#settingsDialog').close();});
-  $('#settingsSave').addEventListener('click',()=>{try{const endpoint=sanitizeEndpoint($('#endpoint').value);localStorage.setItem(SETTINGS,JSON.stringify({endpoint}));if($('#aiAccess').value.trim())globalThis.sessionStorage?.setItem(ACCESS,$('#aiAccess').value.trim());$('#aiAccess').value='';$('#settingsDialog').close();notify('Настройки AI сохранены.');if(reading&&!reading.ai){stopAnalysis();aiInterpret(reading,analysisSequence);}}catch(e){notify(e.message);}});
-  $('#endpointClear').addEventListener('click',()=>{$('#endpoint').value='';$('#aiAccess').value='';localStorage.removeItem(SETTINGS);globalThis.sessionStorage?.removeItem(ACCESS);notify('Адрес и пароль доступа очищены.');});
   $('#clearJournal').addEventListener('click',()=>{if(confirm('Удалить все сохранённые расклады из этого браузера?')){localStorage.removeItem(STORAGE);renderJournal();updateCount();notify('История удалена.');}});
   updateCount();
 }

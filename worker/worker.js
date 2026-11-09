@@ -8,23 +8,10 @@ function jsonResponse(data,status=200,origin='',extras={}){
   return new Response(JSON.stringify(data),{status,headers});
 }
 
-const DAY_LIMIT=200,MINUTE_LIMIT=6;
-export class AIUsageBudget{
-  constructor(ctx){this.ctx=ctx;}
-  async fetch(request){
-    if(request.method!=='POST')return jsonResponse({error:'Method not allowed'},405);
-    const now=new Date(),day=now.toISOString().slice(0,10),minute=Math.floor(now.getTime()/60000);
-    const result=await this.ctx.storage.transaction(async tx=>{
-      const d=await tx.get('day'),m=await tx.get('minute');
-      const daily=d?.day===day?d.count:0,minuteCount=m?.minute===minute?m.count:0;
-      if(daily>=DAY_LIMIT)return {allowed:false,reason:'daily'};
-      if(minuteCount>=MINUTE_LIMIT)return {allowed:false,reason:'minute'};
-      await tx.put('day',{day,count:daily+1});
-      await tx.put('minute',{minute,count:minuteCount+1});
-      return {allowed:true};
-    });
-    return jsonResponse(result,result.allowed?200:429);
-  }
+// Legacy Durable Object class retained only for Cloudflare migration compatibility.
+// No rate or usage limits are enforced by this application.
+export class AIUsageBudget {
+  async fetch(){return jsonResponse({deprecated:true},410);}
 }
 export default{
   async fetch(request,env){
@@ -34,11 +21,9 @@ export default{
       const missing=[];
       if(!allowed)missing.push('ALLOWED_ORIGIN');
       if(!env.GROQ_API_KEY)missing.push('GROQ_API_KEY');
-      if(!env.AI_USAGE_BUDGET)missing.push('AI_USAGE_BUDGET');
-      if(!env.VISITOR_RATE_LIMITER)missing.push('VISITOR_RATE_LIMITER');
       return jsonResponse({ok:true,service:'arcanum-tarot-ai',public:true,ready:missing.length===0,missing},200);
     }
-    if(!allowed||!env.GROQ_API_KEY||!env.AI_USAGE_BUDGET||!env.VISITOR_RATE_LIMITER)
+    if(!allowed||!env.GROQ_API_KEY)
       return jsonResponse({error:'AI-сервис временно недоступен.'},503,origin===allowed?allowed:'');
     if(origin!==allowed)return jsonResponse({error:'Источник не разрешён.'},403);
     if(request.method==='OPTIONS')return new Response(null,{status:204,headers:{
@@ -65,17 +50,6 @@ export default{
     }));
     if(cards.some(c=>!c.name||!c.position||!c.orientation))
       return jsonResponse({error:'Некорректные данные карты.'},400,allowed);
-    try{
-      const visitor=await env.VISITOR_RATE_LIMITER.limit({key:request.headers.get('CF-Connecting-IP')||'unknown'});
-      if(!visitor.success)return jsonResponse({error:'Слишком много раскладов. Попробуй через минуту.'},429,allowed,{'Retry-After':'60'});
-      const stub=env.AI_USAGE_BUDGET.get(env.AI_USAGE_BUDGET.idFromName('arcanum-global-v1'));
-      const limitResponse=await stub.fetch('https://budget.internal/consume',{method:'POST'});
-      const limit=await limitResponse.json();
-      if(!limitResponse.ok)return jsonResponse({error:limit.reason==='daily'?
-        'Бесплатный дневной лимит AI-разборов исчерпан. Попробуй завтра.':
-        'Сейчас слишком много запросов. Попробуй через минуту.'},429,allowed,
-        {'Retry-After':limit.reason==='daily'?'3600':'60'});
-    }catch{return jsonResponse({error:'Защита запросов временно недоступна.'},503,allowed);}
     try{
       const model=env.GROQ_MODEL||MODEL,supportsStrict=/^openai\/gpt-oss-(20b|120b)$/.test(model);
       const completion=await fetch('https://api.groq.com/openai/v1/chat/completions',{

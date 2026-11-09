@@ -20,7 +20,6 @@
         <button class="nav-link active" data-view="home" type="button">Расклад</button>
         <button class="nav-link" data-view="journal" type="button">Дневник <span class="journal-count" id="journalCount">0</span></button>
       </nav>
-      <button class="icon-button" id="settingsOpen" type="button" aria-label="Настройки" title="Настройки">⚙</button>
     </header>
 
     <main>
@@ -76,7 +75,6 @@
               <div id="interpretation" class="ai-reading" aria-live="polite"></div>
               <div id="analysisActions" class="analysis-actions hidden">
                 <button type="button" class="secondary-button" id="retryAI">↻ Повторить анализ</button>
-                <button type="button" class="secondary-button" id="analysisSettings">⚙ Настройки AI</button>
               </div>
             </section>
           </div>
@@ -92,14 +90,6 @@
     <footer class="footer"><span>✦ ARCAnum · создано для исследования, а не предсказаний</span><span>Арт: Pamela Colman Smith · Rider–Waite–Smith (1909)</span></footer>
   </div>
 
-  <dialog class="settings-dialog" id="settingsDialog" aria-labelledby="settingsTitle"><div class="modal-top"><div><p class="small-label">НАСТРОЙКИ</p><h2 id="settingsTitle">AI-таролог</h2></div><button class="icon-button" type="button" id="settingsClose" aria-label="Закрыть">✕</button></div>
-    <p>После открытия карт AI автоматически разбирает расклад. Для этого требуется личный пароль Worker; без него доступна краткая базовая трактовка.</p>
-    <label class="field-label" for="endpoint">Адрес твоего серверного AI-прокси (HTTPS)</label><input id="endpoint" type="url" placeholder="https://твой-worker.workers.dev" autocomplete="off">
-    <label class="field-label" for="aiAccess" style="margin-top:17px">Пароль доступа к AI (НЕ ключ Groq)</label><input id="aiAccess" type="password" placeholder="Личный пароль Worker" autocomplete="off" style="width:100%;border:1px solid rgba(217,202,224,.17);border-radius:10px;background:rgba(11,10,20,.48);color:var(--text);padding:15px 17px">
-    <p class="settings-note">Пароль хранится только до закрытия этой вкладки. Никогда не вставляй сюда ключ Groq.</p>
-    <p class="settings-note">Не вводи здесь ключ Groq, Gemini или OpenRouter. На GitHub Pages ключи нельзя хранить безопасно. Адрес прокси хранится только в этом браузере.</p>
-    <div class="modal-actions"><button class="secondary-button" id="endpointClear" type="button">Очистить</button><button class="primary-button" id="settingsSave" type="button">Сохранить <span>✓</span></button></div>
-  </dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script type="module" src="./app.js"></script>
 </body>
