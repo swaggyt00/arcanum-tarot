@@ -13,6 +13,10 @@ const SYSTEM = [
   'Учитывай цепочку, tension, повторения типов и предыдущие ходы.',
   'Если игроки несколько ходов застряли в одной семье, используй контраст; если сцена развивается логично, продолжай её.',
   'Для режима sex сохраняй дерзкий, чувственный, провокационный вайб взрослых людей; не превращай напряжённую сцену в детский утренник.',
+  'Теперь ты также решаешь, стоит ли добавить ОДНО AI-условие к карточке. Если allowCondition=false, addCondition всегда false.',
+  'Если forceCondition=true, addCondition всегда true. Иначе: на риске 2 добавляй условие примерно в трети ходов, на риске 3 — примерно в половине; не каждый раз.',
+  'Если недавние ходы содержали условия, делай паузу. Не дублируй атмосферные подводки.',
+  'Между похожими Truth-картами предпочитай смену на Dare, а после однообразной цепочки выбирай контраст. Но не ломай логическую связь сцены.',
   'Но не перескакивай через стадию: сильный риск на ранней стадии — это смелость в рамках ранней стадии.',
   'Поле intro — одна короткая живая русская подводка к следующему повороту, 6–18 слов.',
   'Подводка эмоциональна и игрива, но НЕ содержит инструкций, конкретных действий, таймеров, ссылок на невидимую карточку, имён игроков или сексуальных подробностей.',
@@ -60,16 +64,20 @@ function validateRequest(body) {
   if (new Set(candidates.map(item => item.id)).size !== candidates.length) return null
   const recent = body.recent.map(item => ({
     type: item?.type, risk: item?.risk, chains: item?.chains, skipped: item?.skipped,
+    modifierCount: item?.modifierCount ?? 0,
   }))
   if (recent.some(item =>
     !['truth','dare'].includes(item.type) || ![1,2,3].includes(item.risk)
     || !Array.isArray(item.chains) || item.chains.length > 3
     || item.chains.some(chain => !safeChain(chain)) || typeof item.skipped !== 'boolean'
+    || (item.modifierCount !== undefined && (!Number.isInteger(item.modifierCount) || item.modifierCount < 0 || item.modifierCount > 2))
   )) return null
   return {
     scenario: body.scenario, risk: body.risk, stage: body.stage,
     tension: body.tension, chainFamily: body.chainFamily,
     chainDepth: body.chainDepth, recent, candidates,
+    allowCondition: body.allowCondition === true,
+    forceCondition: body.forceCondition === true && body.allowCondition === true,
   }
 }
 
@@ -96,8 +104,9 @@ export async function handleGameDirector(request, env, origin) {
     properties:{
       selectedId:{type:'string',enum:parsed.candidates.map(candidate=>candidate.id)},
       intro:{type:'string'},
+      addCondition:{type:'boolean'},
     },
-    required:['selectedId','intro'],
+    required:['selectedId','intro','addCondition'],
     additionalProperties:false,
   }
   try {
@@ -135,7 +144,11 @@ export async function handleGameDirector(request, env, origin) {
     const intro = typeof result?.intro === 'string'
       ? result.intro.replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,150)
       : ''
-    return respond({selectedId:result.selectedId,intro},200,origin)
+    return respond({
+      selectedId:result.selectedId,
+      intro,
+      addCondition:parsed.allowCondition && (parsed.forceCondition || result.addCondition === true),
+    },200,origin)
   } catch {
     return respond({error:'Не удалось получить ответ AI.'},502,origin)
   }
