@@ -37,11 +37,11 @@ try{
   console.log('AI Director live OK:',JSON.stringify(data))
   const twistUrl=url.replace(/\/game\/director$/, '/game/modifier')
   const twistPayload={
-    version:1,scenario:'afterdark',stage:0,risk:2,cardType:'dare',
+    version:2,scenario:'afterdark',stage:0,risk:2,cardType:'dare',
     chains:['chaos','social'],
     cardText:'Пятнадцать секунд рекламируй ночной перекус как дорогую вещь, используя голос, походку и мимику.',
-    allowedKinds:['reaction','performance'],
-    recentLabels:['НЕЛОВКАЯ ПАУЗА'],
+    allowedKinds:['dare-one-take','dare-no-pause','dare-quick-start'],
+    recentLabels:['НИ ОДНОГО СЛОВА'],
   }
   const twistResponse=await fetch(twistUrl,{
     method:'POST',
@@ -53,7 +53,13 @@ try{
   if(!twistResponse.ok)throw Error('Modifier endpoint rejected: '+JSON.stringify(twistData))
   if(!twistPayload.allowedKinds.includes(twistData?.kind)||!twistData?.description||!twistData?.label)
     throw Error('Invalid live modifier: '+JSON.stringify(twistData))
-  console.log('AI Modifier live OK:',JSON.stringify(twistData))
+  if(/вздох|подними брови|шепни|После выполнения|реакци[юя]/i.test(twistData.description)){
+    throw Error('Groq output was decorative, not difficult: '+JSON.stringify(twistData))
+  }
+  if(!/(с первой попытки|без пауз|пять секунд)/i.test(twistData.description)){
+    throw Error('Groq output did not actually increase difficulty: '+JSON.stringify(twistData))
+  }
+  console.log('AI Difficulty live OK:',JSON.stringify(twistData))
 }catch(error){
   console.error('AI Director smoke failed:',error)
   process.exitCode=1
