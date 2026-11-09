@@ -33,6 +33,8 @@ const CREATOR=[
   'Не копируй готовые названия: «Без пауз», «Без рук», «Только один дубль» и т.п. Сочетай условия под конкретный сюжет.',
   'Варианты направления даны только как вдохновение, НЕ КОПИРУЙ: для 15-секундной рекламы можно требовать каждые 5 секунд новый неповторяющийся аргумент; для танца — менять элемент на каждом четвёртом счёте; для личного вопроса — объяснить две разные стороны одной дилеммы.',
   'Условие проверяемо: игроки сразу понимают, что усложнилось и как проверить выполнение.',
+  'Проверь арифметику и реальное время. Если за 15 секунд менять стиль каждые 3 секунды, получится максимум 5 смен, а не 9. Не требуй невозможного числа этапов.',
+  'Пиши естественным грамматически правильным русским языком: «каждые три секунды», а не «каждый третий секунды». Не перегружай условие тремя или четырьмя одновременными запретами.',
   'Описание: 55–205 символов, законченное правило на русском языке. Название: 6–48 символов, 2–5 выразительных слов.',
   'Избегай одинаковых формулировок и тем из recentLabels. Отвечай строго JSON: axis, label, description, whyHarder.',
   'Выбери axis лишь из allowedAxes. Почему условие сложнее поясни в whyHarder (не показывается игрокам).',
@@ -47,6 +49,8 @@ const REVIEWER=[
   'Отклони если появилась новая сексуальная активность, давление на участников, запрет отказаться/остановиться, новая роль, таймер на физическую близость, новые объекты, публикация, алкоголь или изменение длительности.',
   'Отклони если правило запрещает нужную для исходного задания речь, зрение, руки, движения, паузу или последовательность.',
   'Отклони если условие непонятно кому и как исполнять или оно не проверяемо.',
+  'ПРОВЕРЬ РЕАЛЬНУЮ ВЫПОЛНИМОСТЬ: длительность исходной карточки, интервал смены действия, количество необходимых этапов, физический темп. Если в 15 сек при интервале 3 сек требуется 9 этапов — это невозможно, отклони.',
+  'Отклони грамматически кривой русский («каждый третий секунды»), неясные формулировки и чрезмерное нагромождение условий.',
   'Без снижения стандартов из-за того, что текст написала модель.',
   'Верни JSON с булевыми полями harder, relevant, compatible, noNewTask, respectsBoundaries, nonDecorative и коротким reason.',
 ].join(' ')
@@ -89,6 +93,26 @@ function validateBody(body){
   }
 }
 
+const russianNumbers={
+  'пять':5,'пяти':5,'десять':10,'десяти':10,'пятнадцать':15,
+  'двадцать':20,'двадцати':20,'тридцать':30,'тридцати':30,
+  'три':3,'две':2,'два':2,'двух':2,
+  'девять':9,'девяти':9,'семь':7,'семи':7,'восемь':8,'восьми':8,
+}
+function numberOf(s){return /^\d+$/.test(s)?Number(s):russianNumbers[s.toLowerCase()]||null}
+function contradictsTiming(cardText,description){
+  if(/каждый\s+(?:первый|второй|третий|четвёртый)\s+секунды/i.test(description))return true
+  const base=cardText.toLowerCase().match(/(\d+|пять|десять|пятнадцать|двадцать|тридцать)\s*[- ]?секунд/i)
+  const interval=description.toLowerCase().match(/каждые\s+(\d+|две|три|пять|десять)\s+секунд/i)
+  if(!base||!interval)return false
+  const seconds=numberOf(base[1]),every=numberOf(interval[1])
+  if(!seconds||!every)return false
+  const count=description.toLowerCase().match(/(?:из\s+)?(\d+|пять|пяти|семь|семи|восемь|восьми|девять|девяти|десять)\s+(?:раз|набор|стил|смен|этап|шаг|аргумент|част|фраз)/i)
+  if(!count)return false
+  const needed=numberOf(count[1])
+  return Boolean(needed && needed>Math.ceil(seconds/every)+1)
+}
+
 function validateDraft(draft,data){
   if(!draft||typeof draft!=='object'||!data.allowedAxes.includes(draft.axis))return null
   if(typeof draft.label!=='string'||typeof draft.description!=='string'
@@ -107,6 +131,7 @@ function validateDraft(draft,data){
     && /скажи|произнес|говори|реклам|расскаж|спой|прочитай|объясни|тост|вслух|диалог/i.test(data.cardText))return null
   if(/закрой глаза|закрытыми глазами|вслепую/i.test(description))return null
   if(data.scenario==='sex'&&/за\s+\d+\s*(?:секунд|минут)|не останавливай|без останов/i.test(description))return null
+  if(contradictsTiming(data.cardText,description))return null
   return {axis:draft.axis,label,description,whyHarder}
 }
 
@@ -163,9 +188,11 @@ export async function handleGameModifier(request,env,origin){
       noNewTask:{type:'boolean'},
       respectsBoundaries:{type:'boolean'},
       nonDecorative:{type:'boolean'},
+      feasible:{type:'boolean'},
+      naturalRussian:{type:'boolean'},
       reason:{type:'string'},
     },
-    required:['harder','relevant','compatible','noNewTask','respectsBoundaries','nonDecorative','reason'],
+    required:['harder','relevant','compatible','noNewTask','respectsBoundaries','nonDecorative','feasible','naturalRussian','reason'],
     additionalProperties:false,
   }
   try{
@@ -190,7 +217,7 @@ export async function handleGameModifier(request,env,origin){
       },reviewSchema,'game_twist_review_v3',0.1,550)
       if(reviewed.error)return respond({error:'Не удалось проверить условие.'},reviewed.error,origin)
       const judgment=reviewed.value
-      const criteria=['harder','relevant','compatible','noNewTask','respectsBoundaries','nonDecorative']
+      const criteria=['harder','relevant','compatible','noNewTask','respectsBoundaries','nonDecorative','feasible','naturalRussian']
       if(!judgment||criteria.some(k=>judgment[k]!==true))continue
       const {axis,label,description}=candidate
       return respond({axis,label,description},200,origin)
