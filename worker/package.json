@@ -1,0 +1,8 @@
+{
+  "name": "arcanum-ai-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test game-director.test.mjs"
+  }
+}
