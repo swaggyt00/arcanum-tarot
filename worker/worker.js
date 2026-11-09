@@ -1,4 +1,5 @@
 import { handleGameDirector } from './game-director.js';
+import { handleGameModifier } from './game-modifier.js';
 
 /** Public ARCAnum AI. GROQ_API_KEY stays secret in Cloudflare. */
 const MODEL = 'openai/gpt-oss-120b';
@@ -35,6 +36,9 @@ export default{
     // Isolated game route: same server-side Groq secret, no impact on Tarot /.
     if (new URL(request.url).pathname === '/game/director') {
       return handleGameDirector(request, env, allowed);
+    }
+    if (new URL(request.url).pathname === '/game/modifier') {
+      return handleGameModifier(request, env, allowed);
     }
     if(request.method!=='POST'||new URL(request.url).pathname!=='/')
       return jsonResponse({error:'Доступен только POST /.'},405,allowed);
