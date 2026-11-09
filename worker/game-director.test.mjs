@@ -15,7 +15,7 @@ const body = {
   chainDepth: 2,
   recent: [{ type:'truth', risk: 2, chains:['tease'], skipped:false }],
   candidates:[
-    { id:'v09-native-sex-flirt-001', type:'dare', chains:['tease'],score:44 },
+    { id:'v09:sex-light-dare-001', type:'dare', chains:['tease'],score:44 },
     { id:'v09-native-sex-kiss-001', type:'dare', chains:['kissing'],score:38 },
   ],
 }
