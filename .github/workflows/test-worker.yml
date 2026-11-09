@@ -1,0 +1,23 @@
+name: Test ARCAnum and game AI Worker
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "worker/**"
+      - ".github/workflows/test-worker.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  worker-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Run worker route tests
+        working-directory: worker
+        run: npm test
