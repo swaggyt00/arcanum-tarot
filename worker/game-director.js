@@ -21,6 +21,7 @@ const SYSTEM = [
   'Для sex не обрывай последовательную интимную сцену ради разнообразия и не предлагай неожиданных новых практик.',
   'Ты также создаёшь короткий НЕВИДИМЫЙ сюжетный план scenePlan: РОВНО три будущих шага в строгом порядке build → twist → payoff. Каждый шаг — только phase, chain, preferredType. Это направления выбора карт, а НЕ действия, обязательства, новые правила или обещания событий.',
   'Придумай согласованную драматургическую дугу на основе имеющихся chain-тем, истории принятых и пропущенных ходов, а не выдуманных устных признаний и эмоций.',
+  'ОБЯЗАТЕЛЬНО: первый beat build и третий beat payoff должны иметь chain, присутствующий в chains выбранной selectedId карточки. Так финал вернётся к началу истории. Средний beat twist вправе сменить chain только в разрешённых темах.',
   'В party/afterdark twist может переключить тему, а payoff должен напоминать предыдущую тему. В sex во время физической сцены twist означает изменение нюанса ВНУТРИ уже допустимой темы, НЕ новую сексуальную практику.',
   'Указывай в scenePlan только chain из списка доступных candidate chains. Если на будущем ходе выбран другой риск, стадия или участник, план необязателен и отступает перед реальной проверкой допустимости.',
   'Если activeScene задан, это уже сохранённый предыдущий план. Выбирай подходящую доступную карточку, если это не противоречит актуальному риску, skip или локальному pacing.',
@@ -228,8 +229,11 @@ export async function handleGameDirector(request, env, origin) {
     if (!parsed.candidates.some(item => item.id === result?.selectedId)) {
       return respond({error:'AI выбрал недоступную карточку.'},502,origin)
     }
+    const selected=parsed.candidates.find(item=>item.id===result.selectedId)
     const beats=result?.scenePlan?.beats
     const validPlan=Array.isArray(beats) && beats.length===3
+      && selected?.chains.includes(beats[0]?.chain)
+      && selected?.chains.includes(beats[2]?.chain)
       && beats.every((beat,index)=>beat&&typeof beat==='object'
         && beat.phase===storyPhases[index]
         && planChains.includes(beat.chain)
