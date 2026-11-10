@@ -300,3 +300,22 @@ test('invalid future arcs never replace a valid card or enforce an imagined acti
       'supported but unrelated themes cannot be a fake continuation of the opener')
   }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
 })
+
+test('social story twist must actually contrast the opening chain if possible',async()=>{
+  resetGameProviderStateForTests()
+  const previous=globalThis.fetch
+  try{
+    globalThis.fetch=async()=>Response.json({choices:[{message:{content:JSON.stringify({
+      selectedId:body.candidates[0].id,intro:'Следующая сцена.',addCondition:false,
+      scenePlan:{beats:[
+        {phase:'build',chain:'tease',preferredType:'either'},
+        {phase:'twist',chain:'tease',preferredType:'either'},
+        {phase:'payoff',chain:'tease',preferredType:'either'},
+      ]},
+    })}}]})
+    const response=await handleGameDirector(req({...body,scenario:'party'}),env,origin)
+    assert.equal(response.status,200)
+    assert.equal((await response.json()).scenePlan,null,
+      'a valid card is kept, but a fake social twist is ignored')
+  }finally{globalThis.fetch=previous;resetGameProviderStateForTests()}
+})
