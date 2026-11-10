@@ -54,7 +54,7 @@ function respond(value,status,origin,headers={}){
 
 const typeMechanics=new Set(['truth-only','dare-only','mirror-type','contrast-type'])
 const themeMechanics=new Set(['change-theme','continue-theme'])
-const forbidden=/(раздев|сними\s+(?:одежд|бель)|поцел|целуй|генитал|оральн|проникнов|массаж|сексом|пей|алкогол|выпей|штраф|наказан|застав|обязан|не можешь отказаться|не имеешь права|покажи телефон|отправь|опубликуй|сфотографируй)/i
+const forbidden=/(раздев|сними\s+(?:одежд|бель)|поцел|целуй|генитал|оральн|проникнов|массаж|сексом|пей|алкогол|выпей|штраф|наказан|застав|(?:игрок|участник|ты|вы)\s+обязан|не можешь отказаться|не имеешь права|покажи телефон|отправь|опубликуй|сфотографируй)/i
 
 function compatible(keys){
   return Array.isArray(keys) && keys.length>=1 && keys.length<=2
