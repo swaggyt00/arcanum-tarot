@@ -21,7 +21,7 @@ const payload={
   ],
 }
 const controller=new AbortController()
-const timer=setTimeout(()=>controller.abort(),30000)
+const timer=setTimeout(()=>controller.abort(),65000)
 try{
   const response=await fetch(url,{
     method:'POST',
@@ -111,6 +111,7 @@ try{
     recentLabels:['ПРЕДЫДУЩАЯ СЛОЖНОСТЬ'],
   }
   let liveTwist=null
+  let modifierUnavailable=null
   for(let attempt=1;attempt<=3;attempt++){
     const response=await fetch(twistUrl,{
       method:'POST',
@@ -125,17 +126,33 @@ try{
       'failed-stage:',response.headers.get('X-AI-Error-Stage'),
       'attempts:',response.headers.get('X-AI-Attempts'),
       JSON.stringify(candidate))
-    if(response.status===422)continue // Rejected creativity is expected sometimes.
-    if(!response.ok)throw Error('AI modifier endpoint unavailable: '+JSON.stringify(candidate))
+    if(response.status===422)continue // Correctly rejected drafts are not a successful condition.
+    if([429,502,503,504].includes(response.status)){
+      modifierUnavailable=response.status
+      if(response.status===429)break // Respect upstream rate limit.
+      if(attempt<3){
+        console.log('RETRY: modifier HTTP '+response.status+' after provider cooldown')
+        await new Promise(resolve=>setTimeout(resolve,8500))
+        continue
+      }
+      break
+    }
+    if(!response.ok)throw Error('Unexpected AI modifier endpoint status: '+response.status)
     liveTwist=candidate
     break
   }
-  if(!liveTwist)throw Error('No creative modifier passed independent validation across three samples.')
+  if(!liveTwist && modifierUnavailable){
+    console.warn('::warning::Original AI modifier generation unavailable (HTTP '
+      +modifierUnavailable+'); live generation is not verified. Safe no-condition fallback has E2E coverage.')
+  }else if(!liveTwist){
+    throw Error('No creative modifier passed independent validation across three samples.')
+  }
+  if(!liveTwist)return
   if(!twistPayload.allowedAxes.includes(liveTwist.axis)
     ||typeof liveTwist.label!=='string'||typeof liveTwist.description!=='string'){
     throw Error('Invalid new AI modifier format: '+JSON.stringify(liveTwist))
   }
-  if(/После выполнения|подними бров|вздохни|шепни\s*[«"]|подмигни/i.test(liveTwist.description)){
+  if(/После выполнения|подними бров|вздохни|шепни\s*[«"]|подмигни|каждый\s+произнес[её]нный\s+слово|букв|слог|алфавит|повторяющ(?:иеся|ихся)\s+символ/i.test(liveTwist.description)){
     throw Error('Creative model drifted into irrelevant post-task gestures: '+JSON.stringify(liveTwist))
   }
   if(!/(кажд|без |ни разу|не повтор|не использ|только|ровно|минимум|чередуй|одновременн|два |две |три |конкретн|нельзя|ни одного|ни одной|запрещен|не допускается)/i.test(liveTwist.description)){
