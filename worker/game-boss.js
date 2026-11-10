@@ -7,24 +7,24 @@ import { completeGameJSON } from './game-providers.js'
  */
 const allowed = {
   party: [
-    ['callback-spotlight','voluntary-ballot','opening-echo'],
-    ['duel-remix','role-handoff','double-improv'],
-    ['ensemble-remix','group-reveal','final-chorus'],
+    ['callback-spotlight','voluntary-ballot','opening-echo','callback-witness','team-captain'],
+    ['duel-remix','role-handoff','double-improv','alibi-exchange','reversal-duel'],
+    ['ensemble-remix','group-reveal','final-chorus','group-verdict','finale-callback'],
   ],
   afterdark: [
-    ['night-callback','voluntary-ballot','opening-echo'],
-    ['double-improv','role-handoff','duel-remix'],
-    ['ensemble-remix','group-reveal','final-chorus'],
+    ['night-callback','voluntary-ballot','opening-echo','rumor-reversal','volunteer-spotlight'],
+    ['double-improv','role-handoff','duel-remix','night-alibi','mask-swap'],
+    ['ensemble-remix','group-reveal','final-chorus','midnight-verdict','last-reveal'],
   ],
   couple: [
-    ['shared-memory','wish-echo','mutual-choice'],
-    ['perspective-switch','paired-improv','surprise-reframe'],
-    ['shared-finale','future-choice','open-ending'],
+    ['shared-memory','wish-echo','mutual-choice','secret-attraction','bold-invitation'],
+    ['perspective-switch','paired-improv','surprise-reframe','flirt-role-swap','honest-or-playful'],
+    ['shared-finale','future-choice','open-ending','shared-spark','shared-surprise'],
   ],
   sex: [
-    ['resume-consented','shared-choice','slow-connection'],
-    ['trade-initiative','change-pacing','keep-thread'],
-    ['open-ending','together-decide','no-timer-finish'],
+    ['resume-consented','shared-choice','slow-connection','stay-with-spark','gentle-checkin'],
+    ['trade-initiative','change-pacing','keep-thread','mutual-rhythm','initiative-offer'],
+    ['open-ending','together-decide','no-timer-finish','quiet-finale','choose-finish'],
   ],
 }
 const roles=['all','last-actor','last-target','chain-opener','both']
@@ -68,9 +68,14 @@ function validateRequest(body) {
     ||body.chainFamily!==null&&!safeToken(body.chainFamily))return null
   if(scenario==='party'&&body.playersCount<3)return null
   if((scenario==='couple'||scenario==='sex')&&body.playersCount!==2)return null
-  if(!Array.isArray(body.allowedMechanics)||body.allowedMechanics.length!==3
+  // Backwards-compatible rollout: already-open sessions may still have the
+  // old three-choice catalog. Trust only exact old or new allowlists. No
+  // client-supplied arbitrary mechanic ID can ever reach a model/player.
+  if(!Array.isArray(body.allowedMechanics)||body.allowedMechanics.length!==3)return null
+  const listSize=body.allowedMechanics[0]?.length
+  if(![3,5].includes(listSize)
     ||body.allowedMechanics.some((p,i)=>!Array.isArray(p)
-      ||p.length!==allowed[scenario][i].length
+      ||p.length!==listSize
       ||p.some((mechanic,j)=>mechanic!==allowed[scenario][i][j])))return null
   if(!Array.isArray(body.recent)||body.recent.length>8)return null
   const recent=body.recent.map(item=>({
@@ -94,7 +99,7 @@ function validateRequest(body) {
   return {
     version:1,scenario,stage:body.stage,turnsPlayed:body.turnsPlayed,
     tension:body.tension,chainFamily:body.chainFamily,playersCount:body.playersCount,
-    allowedMechanics:allowed[scenario].map(p=>[...p]),
+    allowedMechanics:body.allowedMechanics.map(p=>[...p]),
     recent,
     chainOutcomes:chainOutcomes.map(x=>({result:x.result,openingChain:x.openingChain})),
     bossHistory:bossHistory.map(x=>({outcome:x.outcome,mechanics:x.mechanics.slice(0,3)})),
