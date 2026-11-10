@@ -1,5 +1,6 @@
 import { handleGameDirector } from './game-director.js';
 import { handleGameModifier } from './game-modifier.js';
+import { gameProviderReadiness } from './game-providers.js';
 
 /** Public ARCAnum AI. GROQ_API_KEY stays secret in Cloudflare. */
 const MODEL = 'openai/gpt-oss-120b';
@@ -24,22 +25,30 @@ export default{
       const missing=[];
       if(!allowed)missing.push('ALLOWED_ORIGIN');
       if(!env.GROQ_API_KEY)missing.push('GROQ_API_KEY');
-      return jsonResponse({ok:true,service:'arcanum-tarot-ai',public:true,ready:missing.length===0,missing},200);
+      return jsonResponse({ok:true,service:'arcanum-tarot-ai',public:true,
+        ready:missing.length===0,missing,
+        gameProviders:gameProviderReadiness(env),
+        gameRouting:'groq-then-gemini',
+      },200);
     }
-    if(!allowed||!env.GROQ_API_KEY)
-      return jsonResponse({error:'AI-сервис временно недоступен.'},503,origin===allowed?allowed:'');
+    if(!allowed)
+      return jsonResponse({error:'AI-сервис временно недоступен.'},503,'');
     if(origin!==allowed)return jsonResponse({error:'Источник не разрешён.'},403);
     if(request.method==='OPTIONS')return new Response(null,{status:204,headers:{
       'Access-Control-Allow-Origin':allowed,'Access-Control-Allow-Methods':'POST, OPTIONS',
       'Access-Control-Allow-Headers':'Content-Type','Access-Control-Max-Age':'600','Vary':'Origin'
     }});
-    // Isolated game route: same server-side Groq secret, no impact on Tarot /.
-    if (new URL(request.url).pathname === '/game/director') {
-      return handleGameDirector(request, env, allowed);
+    // Game can use either configured provider; Tarot remains Groq-only.
+    const path=new URL(request.url).pathname;
+    if (path === '/game/director' || path === '/game/modifier') {
+      if(!env.GROQ_API_KEY && !env.GEMINI_API_KEY)
+        return jsonResponse({error:'AI-сервис временно недоступен.'},503,allowed);
+      return path === '/game/director'
+        ? handleGameDirector(request,env,allowed)
+        : handleGameModifier(request,env,allowed);
     }
-    if (new URL(request.url).pathname === '/game/modifier') {
-      return handleGameModifier(request, env, allowed);
-    }
+    if(!env.GROQ_API_KEY)
+      return jsonResponse({error:'AI-таролог временно недоступен.'},503,allowed);
     if(request.method!=='POST'||new URL(request.url).pathname!=='/')
       return jsonResponse({error:'Доступен только POST /.'},405,allowed);
     if(!/^application\/json(?:;|$)/i.test(request.headers.get('Content-Type')||''))
