@@ -92,11 +92,17 @@ function validateRequest(body) {
     ||!Array.isArray(x.mechanics)||x.mechanics.length>2
     ||x.mechanics.some(key=>!['risk-handoff','truth-only','dare-only','mirror-type','contrast-type','change-theme','continue-theme'].includes(key))
     ||typeof x.accepted!=='boolean'))return null
+  const sanitizedPlayers=players.map((p,index)=>({
+    index,lastRisks:p.lastRisks.slice(0,5),skippedRecent:p.skippedRecent,
+  }))
+  const sanitizedEvents=events.map(x=>({
+    turn:x.turn,title:x.title,mechanics:x.mechanics.slice(0,2),accepted:x.accepted,
+  }))
   return {
     scenario: body.scenario, risk: body.risk, stage: body.stage,
     tension: body.tension, chainFamily: body.chainFamily,
     chainDepth: body.chainDepth, recent, candidates,
-    actorIndex, players, events,
+    actorIndex, players:sanitizedPlayers, events:sanitizedEvents,
     allowCondition: body.allowCondition === true,
     forceCondition: body.forceCondition === true && body.allowCondition === true,
   }
