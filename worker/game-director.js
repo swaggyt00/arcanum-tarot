@@ -69,7 +69,7 @@ const storyPhases = ['build','twist','payoff']
 const validPreferredType = value => ['truth','dare','either'].includes(value)
 const chainTargetRules = ['fair','opener','first-target','previous-actor','previous-target']
 const validChainResult = value => ['finished','skipped','unavailable'].includes(value)
-const unsafeChainCopy = /[{}<>\\r\\n\\u0000-\\u001f]|https?:|www\\.|@|#|(?:обязан|застав|прикаж|накаж|сними\\s+бель|занимайся\\s+сексом|поцелуй|трах|минет|кунилинг|проникнов|не\\s+сможешь\\s+отказ)/i
+const unsafeChainCopy = /[{}<>\r\n\u0000-\u001f]|https?:|www\.|@|#|(?:обязан|застав|прикаж|накаж|сними\s+бель|занимайся\s+сексом|поцелуй|трах|минет|кунилинг|проникнов|не\s+сможешь\s+отказ)/i
 const cleanChainText = (value,min,max) => typeof value === 'string'
   && value === value.trim() && value.length>=min && value.length<=max
   && !unsafeChainCopy.test(value) ? value : null
