@@ -191,6 +191,30 @@ test('live-style imperatives inside Boss captions are discarded, not displayed a
   }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
 })
 
+
+test('second live sample with recalled scene and keep-tempo instruction is stripped',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  try {
+    globalThis.fetch=async()=>groq({
+      ...proposal,phases:proposal.phases.map((phase,index)=>({
+        ...phase,
+        caption:[
+          'Вспомни, что было сказано в полночь…',
+          'Переходим к новому ведущему, держи темп.',
+          'Финальная нотка — совместный выход из игры.',
+        ][index],
+      })),
+    })
+    const response=await handleGameBoss(req(),env,origin)
+    assert.equal(response.status,200)
+    const value=await response.json()
+    assert.equal(value.phases[0].caption,'')
+    assert.equal(value.phases[1].caption,'')
+    assert.match(value.phases[2].caption,/Финальная нотка/)
+  } finally{globalThis.fetch=original;resetGameProviderStateForTests()}
+})
+
 test('new Boss win and defeat outcomes reach AI while extra personal data is dropped',async()=>{
   resetGameProviderStateForTests()
   const original=globalThis.fetch
