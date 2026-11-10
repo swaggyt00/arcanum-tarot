@@ -1,0 +1,23 @@
+name: Verify live AI event generation
+on:
+  push:
+    branches: [main]
+    paths:
+      - "worker/smoke-game-event-live.mjs"
+      - ".github/workflows/test-game-event-live.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  event-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Exercise original AI Event on public Worker
+        run: node worker/smoke-game-event-live.mjs
