@@ -11,6 +11,9 @@ const SYSTEM = [
   'Каждый кандидат уже проверен игровым движком по текущему риску, стадии, границам и ограничениям.',
   'Никогда не выходи за список ID, не меняй уровни риска, не сочиняй новые правила и не объявляй повышения стадии.',
   'Учитывай цепочку, tension, повторения типов и предыдущие ходы.',
+  'Поля players и events — обезличенная память об игровом поведении: уровни риска разных игроков, пропуски, прошлые AI-события и решения принять/отклонить их.',
+  'Учитывай историю событий, не повторяй однотипную драматургию и не противоречь только что принятому игровому событию.',
+  'Ты НЕ слышишь устные ответы на «Правду», не знаешь реальных эмоций или отношений игроков. НЕ выдумывай сказанного ими.',
   'Если игроки несколько ходов застряли в одной семье, используй контраст; если сцена развивается логично, продолжай её.',
   'Для режима sex сохраняй дерзкий, чувственный, провокационный вайб взрослых людей; не превращай напряжённую сцену в детский утренник.',
   'Теперь ты также решаешь, стоит ли добавить ОДНО AI-условие к карточке. Если allowCondition=false, addCondition всегда false.',
@@ -66,17 +69,40 @@ function validateRequest(body) {
   const recent = body.recent.map(item => ({
     type: item?.type, risk: item?.risk, chains: item?.chains, skipped: item?.skipped,
     modifierCount: item?.modifierCount ?? 0,
+    actorIndex: item?.actorIndex ?? 0,
   }))
   if (recent.some(item =>
     !['truth','dare'].includes(item.type) || ![1,2,3].includes(item.risk)
     || !Array.isArray(item.chains) || item.chains.length > 3
     || item.chains.some(chain => !safeChain(chain)) || typeof item.skipped !== 'boolean'
     || (item.modifierCount !== undefined && (!Number.isInteger(item.modifierCount) || item.modifierCount < 0 || item.modifierCount > 2))
+    || !Number.isInteger(item.actorIndex) || item.actorIndex < 0 || item.actorIndex > 5
   )) return null
+  const players=Array.isArray(body.players)?body.players:[]
+  const events=Array.isArray(body.events)?body.events:[]
+  const actorIndex=body.actorIndex ?? 0
+  if(!Number.isInteger(actorIndex)||actorIndex<0||actorIndex>5)return null
+  if(players.length>6||players.some((p,i)=>p.index!==i||!Array.isArray(p.lastRisks)
+    ||p.lastRisks.length>5||p.lastRisks.some(x=>![1,2,3].includes(x))
+    ||!Number.isInteger(p.skippedRecent)||p.skippedRecent<0||p.skippedRecent>12))return null
+  if(players.length>0 && actorIndex>=players.length)return null
+  if(recent.some(item=>players.length>0&&item.actorIndex>=players.length))return null
+  if(events.length>6||events.some(x=>!Number.isInteger(x.turn)||x.turn<0
+    ||typeof x.title!=='string'||x.title.length>55||/[{}<>\u0000-\u001f]/.test(x.title)
+    ||!Array.isArray(x.mechanics)||x.mechanics.length>2
+    ||x.mechanics.some(key=>!['risk-handoff','truth-only','dare-only','mirror-type','contrast-type','change-theme','continue-theme'].includes(key))
+    ||typeof x.accepted!=='boolean'))return null
+  const sanitizedPlayers=players.map((p,index)=>({
+    index,lastRisks:p.lastRisks.slice(0,5),skippedRecent:p.skippedRecent,
+  }))
+  const sanitizedEvents=events.map(x=>({
+    turn:x.turn,title:x.title,mechanics:x.mechanics.slice(0,2),accepted:x.accepted,
+  }))
   return {
     scenario: body.scenario, risk: body.risk, stage: body.stage,
     tension: body.tension, chainFamily: body.chainFamily,
     chainDepth: body.chainDepth, recent, candidates,
+    actorIndex, players:sanitizedPlayers, events:sanitizedEvents,
     allowCondition: body.allowCondition === true,
     forceCondition: body.forceCondition === true && body.allowCondition === true,
   }
