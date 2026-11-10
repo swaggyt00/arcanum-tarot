@@ -66,7 +66,7 @@ try{
   if(/После выполнения|подними бров|вздохни|шепни\s*[«"]|подмигни/i.test(liveTwist.description)){
     throw Error('Creative model drifted into irrelevant post-task gestures: '+JSON.stringify(liveTwist))
   }
-  if(!/(кажд|без |ни разу|не повтор|не использ|только|ровно|минимум|чередуй|одновременн|два |две |три |конкретн)/i.test(liveTwist.description)){
+  if(!/(кажд|без |ни разу|не повтор|не использ|только|ровно|минимум|чередуй|одновременн|два |две |три |конкретн|нельзя|ни одного|ни одной|запрещен|не допускается)/i.test(liveTwist.description)){
     throw Error('Creative modifier did not increase difficulty: '+JSON.stringify(liveTwist))
   }
   console.log('ORIGINAL AI MODIFIER PASSED:',JSON.stringify(liveTwist))
