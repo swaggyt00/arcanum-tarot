@@ -40,6 +40,7 @@ const SYSTEM=[
   'Твой результат — ТОЛЬКО JSON title и phases: ровно 3 элемента с mechanic, role и caption.',
   'Каждый mechanic выбирай строго из allowedMechanics соответствующего индекса фазы (первая / поворот / финал). Механики превращаются в готовое безопасное действие на устройстве; ты НЕ можешь писать свои действия.',
   'Не повторяй комбинацию mechanics из bossHistory. Свяжи начало и финал через recent и chainOutcomes, если там есть подтверждённые факты.',
+  'bossHistory.outcome=won означает, что игрок победил Boss; lost — проиграл или отказался. Это факты игровой статистики, не сведения о чувствах. Не называй поражение победой и не предлагай принудительные наказания.',
   'role: в party/afterdark all, last-actor, last-target или chain-opener; в sex/couple только both. role — предложение добровольному участнику, не принуждение и не доказательство согласия.',
   'caption — короткая оригинальная атмосферная фраза (12–110 символов), а НЕ команда: никаких действий, сексуальных подробностей, наказаний, новых практик, таймеров, подглядывания, фотографии или раскрытия секретов.',
   'Для sex не предлагай новой практики, смены позы, обнажения или эскалации. Доступная механика относится лишь к тому, на что уже согласились оба.',
@@ -89,7 +90,7 @@ function validateRequest(body) {
   if(!Array.isArray(bossHistory)||bossHistory.length>4
     ||bossHistory.some(x=>!x||!Array.isArray(x.mechanics)||x.mechanics.length>3
       ||x.mechanics.some(m=>!safeToken(m))
-      ||!['finished','skipped'].includes(x.outcome)))return null
+      ||!['finished','skipped','won','lost'].includes(x.outcome)))return null
   return {
     version:1,scenario,stage:body.stage,turnsPlayed:body.turnsPlayed,
     tension:body.tension,chainFamily:body.chainFamily,playersCount:body.playersCount,

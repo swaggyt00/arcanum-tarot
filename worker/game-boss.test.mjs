@@ -164,3 +164,31 @@ test('Boss route validates CORS, size and game-only routing without changing Tar
   }),env)
   assert.equal(tarot.status,400)
 })
+
+test('new Boss win and defeat outcomes reach AI while extra personal data is dropped',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  try{
+    let sent
+    globalThis.fetch=async (_url,options)=>{
+      sent=JSON.parse(options.body)
+      return groq(proposal)
+    }
+    const updated={...body,bossHistory:[
+      {mechanics:['opening-echo','role-handoff','final-chorus'],
+        outcome:'lost',challengerIndex:2,reason:'forfeit',name:'PRIVATE_PLAYER_NAME'},
+      {mechanics:['voluntary-ballot','double-improv','group-reveal'],
+        outcome:'won',challengerIndex:0,name:'PRIVATE_PLAYER_NAME'},
+    ]}
+    const response=await handleGameBoss(req(updated),env,origin)
+    assert.equal(response.status,200)
+    const input=JSON.parse(sent.messages[1].content)
+    assert.deepEqual(input.bossHistory.map(x=>x.outcome),['lost','won'])
+    assert.ok(!JSON.stringify(input).includes('PRIVATE_PLAYER_NAME'))
+    assert.ok(!JSON.stringify(input).includes('challengerIndex'))
+    const bad=await handleGameBoss(req({...updated,bossHistory:[
+      {mechanics:['opening-echo'],outcome:'forced-intimacy'},
+    ]}),env,origin)
+    assert.equal(bad.status,400)
+  }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
+})
