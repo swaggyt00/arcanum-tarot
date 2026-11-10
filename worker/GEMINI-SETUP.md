@@ -13,12 +13,17 @@ the game endpoints POST /game/director, POST /game/modifier.
 3. Add a **Secret** named `GEMINI_API_KEY` with the key value. **Do not**
    paste it in GitHub, this chat, the web application's code, a URL or logs.
 4. Optional: add `GEMINI_GAME_MODEL` as a text variable (default:
-   `gemini-3.8-flash`; change only to an available model that supports JSON
+   `gemini-3.5-flash-lite`; change only to an available model that supports JSON
    structured outputs). The game remains functional without Gemini.
 5. Visit
    `https://arcanum-tarot-ai.kunicin27522.workers.dev/health`.
    Check `gameProviders.gemini === true`. It reports only whether a secret is
    configured, never the secret itself.
+
+The deployed fallback currently uses `gemini-3.5-flash-lite`, verified
+with live Cloudflare Gemini API calls. It supports structured outputs and may
+be accessible under free-tier quotas (subject to Google AI Studio project limits).
+Groq remains the preferred model; Gemini is only used when Groq is unavailable.
 
 ## Routing
 
