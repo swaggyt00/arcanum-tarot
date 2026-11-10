@@ -214,6 +214,7 @@ export async function handleGameModifier(request,env,origin){
         'X-AI-Provider':reviewed.provider,
         'X-AI-Creator-Provider':generated.provider,
         'X-AI-Fallback':String(Boolean(generated.fallback||reviewed.fallback)),
+        'X-AI-Attempts':generated.attempts+';'+reviewed.attempts,
       })
     }
     return respond({error:'Не нашлось достаточно хорошего усложнения.'},422,origin)
