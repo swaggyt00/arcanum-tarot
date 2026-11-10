@@ -19,6 +19,13 @@ const SYSTEM = [
   'pacing.momentum и players.targetedRecent — обезличенная статистика участия, а не оценки отношений или удовольствия. Не делай психологических выводов.',
   'Выбор игроком уровня риска всегда главнее твоего сценария; ты не можешь повышать риск и не предлагаешь наказания за пропуски.',
   'Для sex не обрывай последовательную интимную сцену ради разнообразия и не предлагай неожиданных новых практик.',
+  'Ты также создаёшь короткий НЕВИДИМЫЙ сюжетный план scenePlan: РОВНО три будущих шага в строгом порядке build → twist → payoff. Каждый шаг — только phase, chain, preferredType. Это направления выбора карт, а НЕ действия, обязательства, новые правила или обещания событий.',
+  'Придумай согласованную драматургическую дугу на основе имеющихся chain-тем, истории принятых и пропущенных ходов, а не выдуманных устных признаний и эмоций.',
+  'ОБЯЗАТЕЛЬНО: первый beat build и третий beat payoff должны иметь chain, присутствующий в chains выбранной selectedId карточки. Так финал вернётся к началу истории. Средний beat twist вправе сменить chain только в разрешённых темах.',
+  'В party/afterdark twist может переключить тему, а payoff должен напоминать предыдущую тему. В sex во время физической сцены twist означает изменение нюанса ВНУТРИ уже допустимой темы, НЕ новую сексуальную практику.',
+  'Указывай в scenePlan только chain из списка доступных candidate chains. Если на будущем ходе выбран другой риск, стадия или участник, план необязателен и отступает перед реальной проверкой допустимости.',
+  'Если activeScene задан, это уже сохранённый предыдущий план. Выбирай подходящую доступную карточку, если это не противоречит актуальному риску, skip или локальному pacing.',
+  'Никаких текстов будущих заданий, инструкций, имён, фантазий за игроков или требований выполнить что-либо в будущем: только chain, phase, preferredType. Согласие и границы важнее сюжета.',
   'Ты НЕ слышишь устные ответы на «Правду», не знаешь реальных эмоций или отношений игроков. НЕ выдумывай сказанного ими.',
   'Если игроки несколько ходов застряли в одной семье, используй контраст; если сцена развивается логично, продолжай её.',
   'Для режима sex сохраняй дерзкий, чувственный, провокационный вайб взрослых людей; не превращай напряжённую сцену в детский утренник.',
@@ -30,7 +37,7 @@ const SYSTEM = [
   'Поле intro — одна короткая живая русская подводка к следующему повороту, 6–18 слов.',
   'Подводка эмоциональна и игрива, но НЕ содержит инструкций, конкретных действий, таймеров, ссылок на невидимую карточку, имён игроков или сексуальных подробностей.',
   'Никакой морали, канцелярита, извинений, ссылок на ИИ, JSON или ограничения.',
-  'Верни строго JSON с полями selectedId и intro.',
+  'Верни строго JSON с полями selectedId, intro, addCondition и scenePlan.',
 ].join(' ')
 
 function respond(data, status, origin, extra = {}) {
@@ -50,6 +57,8 @@ const safeChain = value => typeof value === 'string' && /^[a-z-]{2,35}$/.test(va
 const validIntent = new Set(['explore','develop','pivot','recover','breather'])
 const validTypeOrNull = value => value === null || value === 'truth' || value === 'dare'
 const validChainOrNull = value => value === null || safeChain(value)
+const storyPhases = ['build','twist','payoff']
+const validPreferredType = value => ['truth','dare','either'].includes(value)
 
 function validateRequest(body) {
   if (!body || typeof body !== 'object' || body.version !== 1) return null
@@ -96,6 +105,15 @@ function validateRequest(body) {
     || !validChainOrNull(pacing.avoidChain)
     || typeof pacing.suppressOptionalModifier!=='boolean'
   ))return null
+  const activeScene=body.activeScene??null
+  if(activeScene!==null && (
+    typeof activeScene!=='object'
+    || !Number.isInteger(activeScene.originTurn) || activeScene.originTurn<0 || activeScene.originTurn>100000
+    || !Number.isInteger(activeScene.beatIndex) || activeScene.beatIndex<0 || activeScene.beatIndex>2
+    || !storyPhases.includes(activeScene.phase)
+    || !safeChain(activeScene.chain)
+    || !validPreferredType(activeScene.preferredType)
+  ))return null
   const players=Array.isArray(body.players)?body.players:[]
   const events=Array.isArray(body.events)?body.events:[]
   const actorIndex=body.actorIndex ?? 0
@@ -131,6 +149,10 @@ function validateRequest(body) {
     chainDepth: body.chainDepth, recent, candidates,
     actorIndex, players:sanitizedPlayers, events:sanitizedEvents,
     pacing:sanitizedPacing,
+    activeScene:activeScene===null?null:{
+      originTurn:activeScene.originTurn,beatIndex:activeScene.beatIndex,
+      phase:activeScene.phase,chain:activeScene.chain,preferredType:activeScene.preferredType,
+    },
     allowCondition: body.allowCondition === true,
     forceCondition: body.forceCondition === true && body.allowCondition === true,
   }
@@ -154,14 +176,37 @@ export async function handleGameDirector(request, env, origin) {
   }
   if (!parsed) return respond({error:'Недопустимое состояние игры.'},400,origin)
 
+  const planChains=[...new Set(parsed.candidates.flatMap(item=>item.chains))]
+  // A plan is only a soft, expiring direction: the future selected risk and
+  // actual card eligibility always outrank it.
   const schema = {
     type:'object',
     properties:{
       selectedId:{type:'string',enum:parsed.candidates.map(candidate=>candidate.id)},
       intro:{type:'string'},
       addCondition:{type:'boolean'},
+      scenePlan:{
+        type:'object',
+        properties:{
+          beats:{
+            type:'array',
+            items:{
+              type:'object',
+              properties:{
+                phase:{type:'string',enum:storyPhases},
+                chain:{type:'string',enum:planChains.length?planChains:['conversation']},
+                preferredType:{type:'string',enum:['truth','dare','either']},
+              },
+              required:['phase','chain','preferredType'],
+              additionalProperties:false,
+            },
+          },
+        },
+        required:['beats'],
+        additionalProperties:false,
+      },
     },
-    required:['selectedId','intro','addCondition'],
+    required:['selectedId','intro','addCondition','scenePlan'],
     additionalProperties:false,
   }
   try {
@@ -172,7 +217,7 @@ export async function handleGameDirector(request, env, origin) {
       schema,
       name:'game_director_pick',
       temperature:0.65,
-      tokens:850,
+      tokens:1250,
     })
     if (!generated.value) {
       const status=generated.error===429?429:generated.error===503?503:502
@@ -184,6 +229,20 @@ export async function handleGameDirector(request, env, origin) {
     if (!parsed.candidates.some(item => item.id === result?.selectedId)) {
       return respond({error:'AI выбрал недоступную карточку.'},502,origin)
     }
+    const selected=parsed.candidates.find(item=>item.id===result.selectedId)
+    const beats=result?.scenePlan?.beats
+    const validPlan=Array.isArray(beats) && beats.length===3
+      && selected?.chains.includes(beats[0]?.chain)
+      && selected?.chains.includes(beats[2]?.chain)
+      && beats.every((beat,index)=>beat&&typeof beat==='object'
+        && beat.phase===storyPhases[index]
+        && planChains.includes(beat.chain)
+        && validPreferredType(beat.preferredType))
+    const scenePlan=validPlan
+      ?{beats:beats.map(beat=>({
+        phase:beat.phase,chain:beat.chain,preferredType:beat.preferredType,
+      }))}
+      :null
     const intro = typeof result?.intro === 'string'
       ? result.intro.replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,150)
       : ''
@@ -191,6 +250,7 @@ export async function handleGameDirector(request, env, origin) {
       selectedId:result.selectedId,
       intro,
       addCondition:parsed.allowCondition && (parsed.forceCondition || result.addCondition === true),
+      scenePlan,
     },200,origin,{'X-AI-Provider':generated.provider,'X-AI-Fallback':String(generated.fallback),
       'X-AI-Attempts':generated.attempts})
   } catch {

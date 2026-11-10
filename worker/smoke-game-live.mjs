@@ -38,6 +38,15 @@ try{
     throw Error('AI selected an unknown card ID: '+JSON.stringify(data))
   }
   if(typeof data.intro!=='string'||!data.intro.trim())throw Error('AI intro missing')
+  const phases=['build','twist','payoff']
+  const permittedThemes=new Set(payload.candidates.flatMap(card=>card.chains))
+  if(!Array.isArray(data.scenePlan?.beats)||data.scenePlan.beats.length!==3
+    ||!data.scenePlan.beats.every((beat,index)=>beat.phase===phases[index]
+      && permittedThemes.has(beat.chain)
+      && ['truth','dare','either'].includes(beat.preferredType))){
+    throw Error('AI Director failed to construct a safe three-beat story arc: '+JSON.stringify(data.scenePlan))
+  }
+  console.log('LIVE AI STORY ARC PASSED:',JSON.stringify(data.scenePlan))
   console.log('AI Director live OK:',JSON.stringify(data))
   const twistUrl=url.replace(/\/game\/director$/, '/game/modifier')
   const twistPayload={
