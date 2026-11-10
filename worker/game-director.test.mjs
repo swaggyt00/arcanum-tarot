@@ -224,3 +224,67 @@ test('Director 2.0 validates and forwards only anonymous pacing and target count
     assert.equal((await handleGameDirector(req({...withPacing,players:[{...withPacing.players[0],targetedRecent:500}]}),env,origin)).status,400)
   }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
 })
+
+test('Director 2.0 generates validated three-beat arcs without exposing private fields',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  const validBeats=[
+    {phase:'build',chain:'tease',preferredType:'either'},
+    {phase:'twist',chain:'kissing',preferredType:'dare'},
+    {phase:'payoff',chain:'tease',preferredType:'either'},
+  ]
+  const proposal={
+    ...body,
+    activeScene:{
+      originTurn:5,beatIndex:1,phase:'twist',chain:'tease',
+      preferredType:'either',hiddenText:'DO_NOT_SEND',
+    },
+    hiddenField:'DO_NOT_SEND',
+  }
+  try{
+    let sent
+    globalThis.fetch=async(_url,options)=>{
+      sent=JSON.parse(options.body)
+      return Response.json({choices:[{message:{content:JSON.stringify({
+        selectedId:body.candidates[0].id,intro:'Новая сцена начинается.',addCondition:false,
+        scenePlan:{beats:validBeats.map(beat=>({...beat,hiddenText:'DO_NOT_SEND'}))},
+      })}}]})
+    }
+    const response=await handleGameDirector(req(proposal),env,origin)
+    assert.equal(response.status,200)
+    const result=await response.json()
+    assert.deepEqual(result.scenePlan,{beats:validBeats},
+      'output contains only approved future theme/type metadata')
+    const modelPayload=JSON.parse(sent.messages[1].content)
+    assert.equal(modelPayload.activeScene.phase,'twist')
+    assert.deepEqual(Object.keys(modelPayload.activeScene).sort(),
+      ['beatIndex','chain','originTurn','phase','preferredType'].sort())
+    assert.ok(!JSON.stringify(modelPayload).includes('DO_NOT_SEND'))
+    assert.deepEqual(sent.response_format.json_schema.schema.properties.scenePlan
+      .properties.beats.items.properties.chain.enum,['tease','kissing'])
+    assert.equal(sent.response_format.json_schema.schema.required.includes('scenePlan'),true)
+    assert.equal((await handleGameDirector(req({...proposal,
+      activeScene:{...proposal.activeScene,phase:'invented-action'},
+    }),env,origin)).status,400)
+  }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
+})
+
+test('invalid future arcs never replace a valid card or enforce an imagined action',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  try{
+    globalThis.fetch=async()=>Response.json({choices:[{message:{content:JSON.stringify({
+      selectedId:body.candidates[1].id,intro:'Карточка доступна.',addCondition:false,
+      scenePlan:{beats:[
+        {phase:'build',chain:'oral',preferredType:'either'},
+        {phase:'twist',chain:'kissing',preferredType:'dare'},
+        {phase:'payoff',chain:'tease',preferredType:'either'},
+      ]},
+    })}}]})
+    const response=await handleGameDirector(req(),env,origin)
+    assert.equal(response.status,200)
+    const data=await response.json()
+    assert.equal(data.selectedId,body.candidates[1].id)
+    assert.equal(data.scenePlan,null,'unsupported practice/theme is discarded, not shown')
+  }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
+})
