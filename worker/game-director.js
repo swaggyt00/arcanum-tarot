@@ -3,7 +3,7 @@
  * This endpoint chooses ONLY from prevalidated card identifiers; it never
  * generates or edits challenge text and never sees player names or card text.
  */
-const GAME_MODEL = 'openai/gpt-oss-120b'
+import { completeGameJSON } from './game-providers.js'
 
 const SYSTEM = [
   'Ты AI Director русскоязычной игры для совершеннолетних «Без Фильтров».',
@@ -24,12 +24,13 @@ const SYSTEM = [
   'Верни строго JSON с полями selectedId и intro.',
 ].join(' ')
 
-function respond(data, status, origin) {
+function respond(data, status, origin, extra = {}) {
   const headers = {
     'Content-Type': 'application/json; charset=utf-8',
     'Cache-Control': 'no-store',
     'Vary': 'Origin',
     'Access-Control-Allow-Origin': origin,
+    ...extra,
   }
   return new Response(JSON.stringify(data), { status, headers })
 }
@@ -110,34 +111,22 @@ export async function handleGameDirector(request, env, origin) {
     additionalProperties:false,
   }
   try {
-    const model = env.GROQ_GAME_MODEL || GAME_MODEL
-    const supportsStrict = /^openai\/gpt-oss-(20b|120b)$/.test(model)
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions',{
-      method:'POST',
-      headers:{Authorization:'Bearer '+env.GROQ_API_KEY,'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model,
-        temperature:0.65,
-        max_completion_tokens:850,
-        ...(supportsStrict ? {reasoning_effort:'low'} : {}),
-        response_format:supportsStrict
-          ? {type:'json_schema',json_schema:{name:'game_director_pick',strict:true,schema}}
-          : {type:'json_object'},
-        messages:[
-          {role:'system',content:SYSTEM},
-          {role:'user',content:JSON.stringify(parsed)},
-        ],
-      }),
+    const generated = await completeGameJSON(env,{
+      route:'game-director',
+      system:SYSTEM,
+      payload:parsed,
+      schema,
+      name:'game_director_pick',
+      temperature:0.65,
+      tokens:850,
     })
-    if (!response.ok) {
-      return respond({error:response.status === 429 ? 'Провайдер перегружен.' : 'AI сейчас недоступен.'},
-        response.status === 429 ? 429 : 502, origin)
+    if (!generated.value) {
+      const status=generated.error===429?429:generated.error===503?503:502
+      return respond({error:status===429?'AI-провайдеры временно ограничили запросы.':'AI сейчас недоступен.'},
+        status,origin,
+        generated.retryAfterSeconds ? {'Retry-After':String(generated.retryAfterSeconds)}:{})
     }
-    const data = await response.json().catch(()=>null)
-    const raw = data?.choices?.[0]?.message?.content
-    if (typeof raw !== 'string') return respond({error:'Пустой AI-ответ.'},502,origin)
-    let result
-    try { result=JSON.parse(raw) } catch { return respond({error:'Неверный AI-ответ.'},502,origin) }
+    const result=generated.value
     if (!parsed.candidates.some(item => item.id === result?.selectedId)) {
       return respond({error:'AI выбрал недоступную карточку.'},502,origin)
     }
@@ -148,7 +137,7 @@ export async function handleGameDirector(request, env, origin) {
       selectedId:result.selectedId,
       intro,
       addCondition:parsed.allowCondition && (parsed.forceCondition || result.addCondition === true),
-    },200,origin)
+    },200,origin,{'X-AI-Provider':generated.provider,'X-AI-Fallback':String(generated.fallback)})
   } catch {
     return respond({error:'Не удалось получить ответ AI.'},502,origin)
   }
