@@ -47,6 +47,16 @@ try{
     throw Error('AI Director failed to construct a safe three-beat story arc: '+JSON.stringify(data.scenePlan))
   }
   console.log('LIVE AI STORY ARC PASSED:',JSON.stringify(data.scenePlan))
+  const chainRules=new Set(['fair','opener','first-target','previous-actor','previous-target'])
+  if(typeof data.chainPlan?.title!=='string'||data.chainPlan.title.length<6
+    ||!Array.isArray(data.chainPlan.beats)||data.chainPlan.beats.length!==3
+    ||!data.chainPlan.beats.every((beat,index)=>beat.phase===phases[index]
+      &&chainRules.has(beat.normalTarget)&&chainRules.has(beat.boldTarget)
+      &&typeof beat.line==='string')){
+    throw Error('AI Chains live generation failed or returned an unsafe structure: '
+      +JSON.stringify(data.chainPlan))
+  }
+  console.log('LIVE AI CHAIN PASSED:',JSON.stringify(data.chainPlan))
   console.log('AI Director live OK:',JSON.stringify(data))
   const twistUrl=url.replace(/\/game\/director$/, '/game/modifier')
   const twistPayload={
