@@ -81,6 +81,31 @@ test('Groq 429 -> Gemini model, schema and payload; next call skips Groq cooldow
   }finally{globalThis.fetch=original}
 })
 
+
+test('trusted route can prefer the other model, with cooldown and fallback intact',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  const providers=[]
+  try{
+    globalThis.fetch=async(url)=>{
+      const provider=String(url).includes('api.groq.com')?'groq':'gemini'
+      providers.push(provider)
+      return provider==='gemini'
+        ?Response.json({error:'temporary outage'},{status:503})
+        :groq()
+    }
+    const first=await completeGameJSON(env,{...shape,preferredProvider:'gemini'})
+    assert.equal(first.provider,'groq')
+    assert.equal(first.fallback,true)
+    assert.equal(first.attempts,'gemini:503,groq:200')
+    assert.deepEqual(providers,['gemini','groq'])
+    const second=await completeGameJSON(env,{...shape,preferredProvider:'gemini'})
+    assert.equal(second.provider,'groq')
+    assert.deepEqual(providers,['gemini','groq','groq'],
+      'cooldown still avoids retrying the down model')
+  }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
+})
+
 test('Gemini-only game can operate while Tarot health still requires Groq',async()=>{
   resetGameProviderStateForTests()
   const original=globalThis.fetch
