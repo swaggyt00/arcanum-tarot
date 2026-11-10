@@ -13,6 +13,12 @@ const SYSTEM = [
   'Учитывай цепочку, tension, повторения типов и предыдущие ходы.',
   'Поля players и events — обезличенная память об игровом поведении: уровни риска разных игроков, пропуски, прошлые AI-события и решения принять/отклонить их.',
   'Учитывай историю событий, не повторяй однотипную драматургию и не противоречь только что принятому игровому событию.',
+  'Поле pacing — безопасный локальный план темпа, рассчитанный по сыгранным ходам, а не по эмоциям участников. Следуй этому плану при выборе ID.',
+  'pacing.intent=develop: развивай подходящую цепочку; pivot: смени повторяющийся тип или тему; recover: после пропуска НЕ повторяй ту же тему; breather: дай контраст внутри выбранного риска; explore: ищи разнообразие.',
+  'pacing.focusChain и avoidChain — предпочтения, НЕ разрешение нарушать границы. Если shortlist не допускает точного темпа, просто выбери самый логичный разрешённый ID.',
+  'pacing.momentum и players.targetedRecent — обезличенная статистика участия, а не оценки отношений или удовольствия. Не делай психологических выводов.',
+  'Выбор игроком уровня риска всегда главнее твоего сценария; ты не можешь повышать риск и не предлагаешь наказания за пропуски.',
+  'Для sex не обрывай последовательную интимную сцену ради разнообразия и не предлагай неожиданных новых практик.',
   'Ты НЕ слышишь устные ответы на «Правду», не знаешь реальных эмоций или отношений игроков. НЕ выдумывай сказанного ими.',
   'Если игроки несколько ходов застряли в одной семье, используй контраст; если сцена развивается логично, продолжай её.',
   'Для режима sex сохраняй дерзкий, чувственный, провокационный вайб взрослых людей; не превращай напряжённую сцену в детский утренник.',
@@ -41,6 +47,9 @@ function respond(data, status, origin, extra = {}) {
 // Legacy Director IDs are prefixed with v09:; the colon is a valid separator.
 const safeToken = value => typeof value === 'string' && /^[a-z0-9:-]{2,120}$/.test(value)
 const safeChain = value => typeof value === 'string' && /^[a-z-]{2,35}$/.test(value)
+const validIntent = new Set(['explore','develop','pivot','recover','breather'])
+const validTypeOrNull = value => value === null || value === 'truth' || value === 'dare'
+const validChainOrNull = value => value === null || safeChain(value)
 
 function validateRequest(body) {
   if (!body || typeof body !== 'object' || body.version !== 1) return null
@@ -78,13 +87,23 @@ function validateRequest(body) {
     || (item.modifierCount !== undefined && (!Number.isInteger(item.modifierCount) || item.modifierCount < 0 || item.modifierCount > 2))
     || !Number.isInteger(item.actorIndex) || item.actorIndex < 0 || item.actorIndex > 5
   )) return null
+  // Optional v2 pacing metadata preserves compatibility with existing v1 clients.
+  const pacing=body.pacing ?? null
+  if(pacing!==null && (
+    !pacing || typeof pacing!=='object' || !validIntent.has(pacing.intent)
+    || !Number.isInteger(pacing.momentum) || pacing.momentum<0 || pacing.momentum>3
+    || !validTypeOrNull(pacing.preferType) || !validChainOrNull(pacing.focusChain)
+    || !validChainOrNull(pacing.avoidChain)
+    || typeof pacing.suppressOptionalModifier!=='boolean'
+  ))return null
   const players=Array.isArray(body.players)?body.players:[]
   const events=Array.isArray(body.events)?body.events:[]
   const actorIndex=body.actorIndex ?? 0
   if(!Number.isInteger(actorIndex)||actorIndex<0||actorIndex>5)return null
   if(players.length>6||players.some((p,i)=>p.index!==i||!Array.isArray(p.lastRisks)
     ||p.lastRisks.length>5||p.lastRisks.some(x=>![1,2,3].includes(x))
-    ||!Number.isInteger(p.skippedRecent)||p.skippedRecent<0||p.skippedRecent>12))return null
+    ||!Number.isInteger(p.skippedRecent)||p.skippedRecent<0||p.skippedRecent>12
+    ||(p.targetedRecent!==undefined&&(!Number.isInteger(p.targetedRecent)||p.targetedRecent<0||p.targetedRecent>16))))return null
   if(players.length>0 && actorIndex>=players.length)return null
   if(recent.some(item=>players.length>0&&item.actorIndex>=players.length))return null
   if(events.length>6||events.some(x=>!Number.isInteger(x.turn)||x.turn<0
@@ -94,6 +113,7 @@ function validateRequest(body) {
     ||typeof x.accepted!=='boolean'))return null
   const sanitizedPlayers=players.map((p,index)=>({
     index,lastRisks:p.lastRisks.slice(0,5),skippedRecent:p.skippedRecent,
+    targetedRecent:p.targetedRecent??0,
   }))
   const sanitizedEvents=events.map(x=>({
     turn:x.turn,title:x.title,mechanics:x.mechanics.slice(0,2),accepted:x.accepted,
@@ -103,6 +123,7 @@ function validateRequest(body) {
     tension: body.tension, chainFamily: body.chainFamily,
     chainDepth: body.chainDepth, recent, candidates,
     actorIndex, players:sanitizedPlayers, events:sanitizedEvents,
+    pacing:pacing??{intent:'explore',momentum:0,preferType:null,focusChain:null,avoidChain:null,suppressOptionalModifier:false},
     allowCondition: body.allowCondition === true,
     forceCondition: body.forceCondition === true && body.allowCondition === true,
   }
