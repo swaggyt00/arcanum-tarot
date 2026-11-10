@@ -69,10 +69,11 @@ const storyPhases = ['build','twist','payoff']
 const validPreferredType = value => ['truth','dare','either'].includes(value)
 const chainTargetRules = ['fair','opener','first-target','previous-actor','previous-target']
 const validChainResult = value => ['finished','skipped','unavailable'].includes(value)
-const unsafeChainCopy = /[{}<>\r\n\u0000-\u001f]|https?:|www\.|@|#|(?:обязан|застав|прикаж|накаж|сними\s+бель|занимайся\s+сексом|поцелуй|трах|минет|кунилинг|проникнов|не\s+сможешь\s+отказ)/i
+const unsafeChainCopy = /[{}<>\r\n\u0000-\u001f]|https?:|www\.|@|#|(?:обязан|застав|прикаж|накаж|наказ|сними\s+бель|занимайся\s+сексом|поцелуй|трах|минет|кунилинг|проникнов|не\s+сможешь\s+отказ)/i
+const chainCommand = /^(?:сделай|назови|скажи|покажи|подойди|сними|выбери|ответь|выполни|целуй|попроси|начни|заставь)(?=\s|[!,.?:]|$)/i
 const cleanChainText = (value,min,max) => typeof value === 'string'
   && value === value.trim() && value.length>=min && value.length<=max
-  && !unsafeChainCopy.test(value) ? value : null
+  && !unsafeChainCopy.test(value) && !chainCommand.test(value) ? value : null
 
 function validateRequest(body) {
   if (!body || typeof body !== 'object' || body.version !== 1) return null
