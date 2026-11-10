@@ -8,6 +8,8 @@ const payload={
   tension:22,
   chainFamily:'flirt',
   chainDepth:1,
+  pacing:{intent:'develop',momentum:2,preferType:null,focusChain:'flirt',
+    avoidChain:null,suppressOptionalModifier:false},
   recent:[
     {type:'truth',risk:1,chains:['conversation'],skipped:false},
     {type:'dare',risk:2,chains:['flirt'],skipped:false},
