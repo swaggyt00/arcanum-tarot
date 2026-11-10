@@ -305,6 +305,56 @@ test('Gemini continues independent creative generation and review after Groq 429
   }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
 })
 
+
+test('creator Groq and independent Gemini review when both are healthy',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  const both={...env,GEMINI_API_KEY:'unit-gemini'}
+  const calls=[]
+  try{
+    globalThis.fetch=async(url,options)=>{
+      calls.push(String(url).includes('api.groq.com')?'groq':'gemini')
+      if(calls.length===1){
+        assert.match(String(url),/api.groq.com/)
+        return completion(draft)
+      }
+      assert.match(String(url),/generativelanguage.googleapis.com/)
+      const payload=JSON.parse(options.body)
+      assert.equal(payload.generationConfig.responseSchema.properties.easyToVerify.type,'boolean')
+      assert.equal(payload.generationConfig.responseSchema.properties.singleRule.type,'boolean')
+      return Response.json({candidates:[{content:{parts:[{text:JSON.stringify(approve)}]}}]})
+    }
+    const response=await handleGameModifier(req(),both,origin)
+    assert.equal(response.status,200)
+    assert.deepEqual(calls,['groq','gemini'])
+    assert.equal(response.headers.get('X-AI-Creator-Provider'),'groq')
+    assert.equal(response.headers.get('X-AI-Provider'),'gemini')
+    assert.deepEqual(await response.json(),{
+      axis:draft.axis,label:draft.label,description:draft.description,
+    })
+  }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
+})
+
+test('reviewer falls back to original provider if alternate reviewer returns 503',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  const both={...env,GEMINI_API_KEY:'unit-gemini'}
+  const calls=[]
+  try{
+    globalThis.fetch=async(url)=>{
+      const provider=String(url).includes('api.groq.com')?'groq':'gemini'
+      calls.push(provider)
+      if(calls.length===1)return completion(draft)
+      if(provider==='gemini')return Response.json({error:'temporary'}, {status:503})
+      return completion(approve)
+    }
+    const response=await handleGameModifier(req(),both,origin)
+    assert.equal(response.status,200)
+    assert.deepEqual(calls,['groq','gemini','groq'])
+    assert.equal(response.headers.get('X-AI-Provider'),'groq')
+  }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
+})
+
 test('Gemini generated decorative extras still fail the original hard gate',async()=>{
   resetGameProviderStateForTests()
   const original=globalThis.fetch
