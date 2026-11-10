@@ -129,6 +129,10 @@ function validateCandidate(data,input){
   if(/https?:|www\.|@|#/.test(title+description))return null
   if(forbidden.test(title+description))return null
   if(input.events.slice(-3).some(x=>x.title.toLocaleLowerCase('ru')===title.toLocaleLowerCase('ru')))return null
+  if(input.events.slice(-2).some(x=>
+    x.mechanics.length===data.mechanics.length
+    && x.mechanics.every(key=>data.mechanics.includes(key))
+  ))return null
   return {title,description,mechanics:data.mechanics,originality:data.originality.slice(0,230)}
 }
 
