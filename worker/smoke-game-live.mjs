@@ -147,8 +147,8 @@ try{
   }else if(!liveTwist){
     throw Error('No creative modifier passed independent validation across three samples.')
   }
-  if(!liveTwist)return
-  if(!twistPayload.allowedAxes.includes(liveTwist.axis)
+  if(liveTwist){
+    if(!twistPayload.allowedAxes.includes(liveTwist.axis)
     ||typeof liveTwist.label!=='string'||typeof liveTwist.description!=='string'){
     throw Error('Invalid new AI modifier format: '+JSON.stringify(liveTwist))
   }
@@ -158,7 +158,8 @@ try{
   if(!/(кажд|без |ни разу|не повтор|не использ|только|ровно|минимум|чередуй|одновременн|два |две |три |конкретн|нельзя|ни одного|ни одной|запрещен|не допускается)/i.test(liveTwist.description)){
     throw Error('Creative modifier did not increase difficulty: '+JSON.stringify(liveTwist))
   }
-  console.log('ORIGINAL AI MODIFIER PASSED:',JSON.stringify(liveTwist))
+    console.log('ORIGINAL AI MODIFIER PASSED:',JSON.stringify(liveTwist))
+  }
 
 }catch(error){
   console.error('AI Director smoke failed:',error)
