@@ -58,6 +58,50 @@ try{
   }
   console.log('LIVE AI CHAIN PASSED:',JSON.stringify(data.chainPlan))
   console.log('AI Director live OK:',JSON.stringify(data))
+  // A Boss is composed by the model but its actual challenges are selected
+  // from verified mechanic IDs. This endpoint has an independent fallback
+  // path in the browser, so a transient 429/503 is a warning, not fake success.
+  const bossUrl=url.replace(/\/game\/director$/, '/game/boss')
+  const bossPayload={
+    version:1,scenario:'afterdark',stage:2,tension:82,turnsPlayed:14,
+    chainFamily:'social',playersCount:2,
+    allowedMechanics:[
+      ['night-callback','voluntary-ballot','opening-echo'],
+      ['double-improv','role-handoff','duel-remix'],
+      ['ensemble-remix','group-reveal','final-chorus'],
+    ],
+    recent:[
+      {actorIndex:0,targetIndex:1,type:'truth',risk:2,skipped:false,chains:['social']},
+      {actorIndex:1,targetIndex:0,type:'dare',risk:3,skipped:false,chains:['social']},
+    ],
+    chainOutcomes:[{result:'finished',openingChain:'social'}],
+    bossHistory:[],
+  }
+  const bossResponse=await fetch(bossUrl,{
+    method:'POST',
+    headers:{Origin:'https://swaggyt00.github.io','Content-Type':'application/json'},
+    body:JSON.stringify(bossPayload),
+    signal:controller.signal,
+  })
+  const bossData=await bossResponse.json().catch(()=>null)
+  console.log('AI BOSS live status:',bossResponse.status,
+    'provider:',bossResponse.headers.get('X-AI-Provider'),
+    'attempts:',bossResponse.headers.get('X-AI-Attempts'))
+  if(bossResponse.ok){
+    if(typeof bossData?.title!=='string'
+      ||!Array.isArray(bossData.phases)||bossData.phases.length!==3
+      ||!bossData.phases.every((phase,index)=>bossPayload.allowedMechanics[index].includes(phase.mechanic)
+        &&['all','last-actor','last-target','chain-opener'].includes(phase.role)
+        &&typeof phase.caption==='string')){
+      throw Error('AI Boss endpoint returned an unsafe/unplayable structure: '+JSON.stringify(bossData))
+    }
+    console.log('LIVE AI BOSS PASSED:',JSON.stringify(bossData))
+  }else if([429,502,503,504].includes(bossResponse.status)){
+    console.warn('::warning::AI Boss model unavailable (HTTP '+bossResponse.status
+      +'). Verified game fallback is covered by E2E, but live Boss generation remains unverified.')
+  }else{
+    throw Error('Unexpected Boss endpoint failure: '+bossResponse.status+' '+JSON.stringify(bossData))
+  }
   const twistUrl=url.replace(/\/game\/director$/, '/game/modifier')
   const twistPayload={
     version:3,scenario:'afterdark',stage:0,risk:2,cardType:'dare',

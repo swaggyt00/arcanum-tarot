@@ -1,6 +1,7 @@
 import { handleGameDirector } from './game-director.js';
 import { handleGameModifier } from './game-modifier.js';
 import { handleGameEvent } from './game-event.js';
+import { handleGameBoss } from './game-boss.js';
 import { gameProviderReadiness } from './game-providers.js';
 
 /** Public ARCAnum AI. GROQ_API_KEY stays secret in Cloudflare. */
@@ -41,11 +42,12 @@ export default{
     }});
     // Game can use either configured provider; Tarot remains Groq-only.
     const path=new URL(request.url).pathname;
-    if (path === '/game/director' || path === '/game/modifier' || path === '/game/event') {
+    if (path === '/game/director' || path === '/game/modifier' || path === '/game/event' || path === '/game/boss') {
       if(!env.GROQ_API_KEY && !env.GEMINI_API_KEY)
         return jsonResponse({error:'AI-сервис временно недоступен.'},503,allowed);
       if(path === '/game/director')return handleGameDirector(request,env,allowed);
       if(path === '/game/modifier')return handleGameModifier(request,env,allowed);
+      if(path === '/game/boss')return handleGameBoss(request,env,allowed);
       return handleGameEvent(request,env,allowed);
     }
     if(!env.GROQ_API_KEY)
