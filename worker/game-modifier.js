@@ -20,6 +20,14 @@ const intimate=/(поцел|целуй|губ|прикосн|косн|касай
 const forbidden=/(поцел|целуй|прикосн|косн|касай|трог|обним|массаж|раздев|раздет|сними\s+(?:бель|одежд|трус|лиф)|оральн|минет|кунилинг|стимуляц|генитал|аналь|проникнов|оргазм|шл[её]п|удуш|свяж|пей|выпей|алкогол|оштраф|наказан|застав|обязан|не можешь отказаться|не имеешь права отказаться|отправ|опубликуй|сфотограф|запиши на видео|покажи переписк)/i
 const decorative=/(после (?:выполнения|завершения|окончания|этого)|подними бров|приподними бров|вздохни|подмигни|подмигивай|сделай (?:театральный|загадочный) (?:жест|взгляд)|шепни\s*[«"]|скажи\s*[«"]вот так)/i
 const hardening=/(кажд|без\s|ни разу|никак|не повтор|не использ|не упомин|не называ|не делай|не останав|только|ровно|минимум|не менее|не больше|максимум|обязательно.*(?:две|два|три|четыре)|одновременн|чередуй|за\s+\d|в течение\s+\d|раз в\s+\d|до конца|по очереди|при каждом|вс[её]\s+время|сразу|последовательно|двумя|тремя|две |два |три |двух |трёх |трех |конкретн)/i
+// These are high-confidence semantic/grammar failures. The second model may
+// approve a malformed phrase, so they must be rejected even after a "yes".
+const wrongAgreement=/(?:каждый|каждого|каждому)\s+(?:(?:произнес[её]нный|сказанный|упомянутый|выбранный|новый)\s+)?(?:слово|фразу|фраза|буква|реплика|предложение)\b|(?:каждое|каждую)\s+(?:(?:новое|новую|произнес[её]нное)\s+)?(?:аргумент|довод|вопрос|этап|слог|шаг)\b|(?:каждый|каждую)\s+(?:первый|второй|третий|четв[её]ртый)\s+секунды\b/i
+const microWordRules=/(?:букв|гласн|согласн|слог|алфавит|символ|орфограф|однокоренн|анаграм|панграм)/i
+// Letter-level rules are not realistically auditable in improvised speech,
+// dancing or performance. Keep them available ONLY for genuine word puzzles.
+const actualWordPuzzle=/(?:состав(?:ь|ить).*\bслов|назов(?:и|ать).*\bслов|рифм|анаграм|алфавит|букв|слог|правописан)/i
+const meaninglessFormalism=/(?:уникальн(?:ые|ыми|ых|ая|ый)\s+(?:букв|символ|слог)|неповторяющ(?:иеся|ихся)\s+(?:букв|символ)|без\s+повторяющ(?:ихся|иеся)\s+(?:букв|символ))/i
 const safeChain=value=>typeof value==='string'&&/^[a-z-]{2,35}$/.test(value)
 
 const CREATOR=[
@@ -34,7 +42,10 @@ const CREATOR=[
   'Если базовая карточка сексуальна, НЕ добавляй давления, таймера на физический контакт, контроля над телом, новых интимных действий и ограничений, мешающих остановиться.',
   'Не копируй готовые названия: «Без пауз», «Без рук», «Только один дубль» и т.п. Сочетай условия под конкретный сюжет.',
   'Варианты направления даны только как вдохновение, НЕ КОПИРУЙ: для 15-секундной рекламы можно требовать каждые 5 секунд новый неповторяющийся аргумент; для танца — менять элемент на каждом четвёртом счёте; для личного вопроса — объяснить две разные стороны одной дилеммы.',
-  'Условие проверяемо: игроки сразу понимают, что усложнилось и как проверить выполнение.',
+  'Условие проверяемо ВО ВРЕМЯ игры без записи и анализа после: его могут проверить слушатели и игрок без дополнительных инструментов.',
+  'Не превращай импровизированную рекламу, пение или разговор в анализ отдельных букв, гласных, слогов и уникальности символов: такое почти невозможно проверить на слух в реальном времени.',
+  'Плохой пример, который НЕЛЬЗЯ выдавать: «каждый произнесённый слово должен содержать только уникальные буквы». Здесь и ошибка в согласовании, и бессмысленная проверка букв в живой речи.',
+  'Одна понятная игровая трудность, а не два-три искусственных правила, которые мешают выполнить само задание.',
   'Проверь арифметику и реальное время. Если за 15 секунд менять стиль каждые 3 секунды, получится максимум 5 смен, а не 9. Не требуй невозможного числа этапов.',
   'Пиши естественным грамматически правильным русским языком: «каждые три секунды», а не «каждый третий секунды». Не перегружай условие тремя или четырьмя одновременными запретами.',
   'Описание: 55–205 символов, законченное правило на русском языке. Название: 6–48 символов, 2–5 выразительных слов.',
@@ -52,7 +63,10 @@ const REVIEWER=[
   'Отклони если правило запрещает нужную для исходного задания речь, зрение, руки, движения, паузу или последовательность.',
   'Отклони если условие непонятно кому и как исполнять или оно не проверяемо.',
   'ПРОВЕРЬ РЕАЛЬНУЮ ВЫПОЛНИМОСТЬ: длительность исходной карточки, интервал смены действия, количество необходимых этапов, физический темп. Если в 15 сек при интервале 3 сек требуется 9 этапов — это невозможно, отклони.',
-  'Отклони грамматически кривой русский («каждый третий секунды»), неясные формулировки и чрезмерное нагромождение условий.',
+  'Отклони грамматически кривой русский («каждый третий секунды», «каждый произнесённый слово»), неясные формулировки и чрезмерное нагромождение условий.',
+  'Отклони требование проверять уникальность букв, слогов или символов ВО ВРЕМЯ устной рекламы, импровизации, пения либо разговора. Оно непрактично и недоступно проверке остальными игроками.',
+  'Выставляй easyToVerify=true только если зрители могут мгновенно отличить выполнение от нарушения, без записи/пересчёта букв и слов задним числом.',
+  'Выставляй singleRule=true только если ограничение является одним понятным усложнением и не мешает основному заданию.',
   'Без снижения стандартов из-за того, что текст написала модель.',
   'Верни JSON с булевыми полями harder, relevant, compatible, noNewTask, respectsBoundaries, nonDecorative и коротким reason.',
 ].join(' ')
@@ -143,6 +157,9 @@ function validateDraft(draft,data){
   if(/https?:|www\.|@|#|\*/i.test(label+description))return null
   if(CANNED.has(label.toUpperCase())||data.recentLabels.some(x=>x.toLowerCase()===label.toLowerCase()))return null
   if(forbidden.test(description)||decorative.test(description)||!hardening.test(description))return null
+  if(wrongAgreement.test(description)||wrongAgreement.test(label))return null
+  if((microWordRules.test(description)||meaninglessFormalism.test(description))
+    &&!actualWordPuzzle.test(data.cardText))return null
   if(/дольше чем|продли|увеличь длительност|ещ[её] минут|вместо основного|замени задание/i.test(description))return null
   if(/молча|без слов|не говори|не произноси/i.test(description)
     && /скажи|произнес|говори|реклам|расскаж|спой|прочитай|объясни|тост|вслух|диалог/i.test(data.cardText))return null
@@ -152,10 +169,10 @@ function validateDraft(draft,data){
   return {axis:draft.axis,label,description,whyHarder}
 }
 
-async function completeJSON(env,system,payload,schema,name,temperature,tokens){
+async function completeJSON(env,system,payload,schema,name,temperature,tokens,preferredProvider=null){
   return completeGameJSON(env,{
     route:name==='original_game_twist_v3'?'game-modifier-create':'game-modifier-review',
-    system,payload,schema,name,temperature,tokens,
+    system,payload,schema,name,temperature,tokens,preferredProvider,
   })
 }
 
@@ -192,9 +209,11 @@ export async function handleGameModifier(request,env,origin){
       nonDecorative:{type:'boolean'},
       feasible:{type:'boolean'},
       naturalRussian:{type:'boolean'},
+      easyToVerify:{type:'boolean'},
+      singleRule:{type:'boolean'},
       reason:{type:'string'},
     },
-    required:['harder','relevant','compatible','noNewTask','respectsBoundaries','nonDecorative','feasible','naturalRussian','reason'],
+    required:['harder','relevant','compatible','noNewTask','respectsBoundaries','nonDecorative','feasible','naturalRussian','easyToVerify','singleRule','reason'],
     additionalProperties:false,
   }
   try{
@@ -203,7 +222,7 @@ export async function handleGameModifier(request,env,origin){
     for(let attempt=0;attempt<2;attempt++){
       const creativeInput=attempt===0?parsed:{
         ...parsed,
-        retryGuidance:'Предыдущий вариант не прошёл проверку. Придумай ДРУГОЕ конкретное ограничение: оно должно измеримо усложнять выполнение исходной карточки, не добавлять новую задачу, быть 55–205 символов и не содержать декоративных жестов.',
+        retryGuidance:'Предыдущий вариант не прошёл проверку качества. Нужна ОДНА новая, естественная и проверяемая в реальном времени сложность без анализа букв/слогов в устной речи, ошибок согласования, отдельной задачи или декоративных жестов. 55–205 символов.',
       }
       const generated=await completeJSON(env,CREATOR,creativeInput,createSchema,'original_game_twist_v3',0.85,900)
       if(generated.error)return respond({error:'Не удалось придумать условие.'},generated.error,origin,
@@ -217,11 +236,13 @@ export async function handleGameModifier(request,env,origin){
         risk:parsed.risk,
         cardType:parsed.cardType,
         proposedCondition:candidate,
-      },reviewSchema,'game_twist_review_v3',0.1,550)
+      },reviewSchema,'game_twist_review_v3',0.1,650,
+      generated.provider==='groq'?'gemini':'groq')
       if(reviewed.error)return respond({error:'Не удалось проверить условие.'},reviewed.error,origin,
         providerFailureHeaders(reviewed,'review'))
       const judgment=reviewed.value
-      const criteria=['harder','relevant','compatible','noNewTask','respectsBoundaries','nonDecorative','feasible','naturalRussian']
+      const criteria=['harder','relevant','compatible','noNewTask','respectsBoundaries',
+        'nonDecorative','feasible','naturalRussian','easyToVerify','singleRule']
       if(!judgment||criteria.some(k=>judgment[k]!==true))continue
       const {axis,label,description}=candidate
       return respond({axis,label,description},200,origin,{
