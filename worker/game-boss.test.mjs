@@ -192,3 +192,80 @@ test('new Boss win and defeat outcomes reach AI while extra personal data is dro
     assert.equal(bad.status,400)
   }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
 })
+
+test('expanded 5×5×5 Boss catalog supports new verified mechanics and legacy sessions',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  const updated={
+    ...body,
+    allowedMechanics:allowed.party.map((choices,index)=>[
+      ...choices,
+      ...[
+        ['callback-witness','team-captain'],
+        ['alibi-exchange','reversal-duel'],
+        ['group-verdict','finale-callback'],
+      ][index],
+    ]),
+  }
+  const newDraft={
+    title:'Суд над прошедшим раундом',
+    phases:[
+      {mechanic:'callback-witness',role:'last-actor',caption:'Из прошлого снова появляется свидетель истории.'},
+      {mechanic:'reversal-duel',role:'last-target',caption:'Соперники теперь неожиданно меняются ролями.'},
+      {mechanic:'group-verdict',role:'all',caption:'Вся компания завершает историю общим решением.'},
+    ],
+  }
+  try{
+    globalThis.fetch=async(_url,options)=>{
+      const request=JSON.parse(options.body)
+      const message=JSON.parse(request.messages[1].content)
+      assert.deepEqual(message.allowedMechanics,updated.allowedMechanics)
+      return groq(newDraft)
+    }
+    const accepted=await handleGameBoss(req(updated),env,origin)
+    assert.equal(accepted.status,200)
+    assert.deepEqual(await accepted.json(),newDraft)
+    const injected={...updated,allowedMechanics:updated.allowedMechanics.map((c,i)=>
+      i===2?[...c.slice(0,-1),'invent-a-punishment']:c)}
+    assert.equal((await handleGameBoss(req(injected),env,origin)).status,400)
+    const mixed={...updated,allowedMechanics:updated.allowedMechanics.map((c,i)=>
+      i===1?c.slice(0,3):c)}
+    assert.equal((await handleGameBoss(req(mixed),env,origin)).status,400)
+
+    // Existing open browser tabs still submit their old three-option catalog.
+    globalThis.fetch=async()=>groq(proposal)
+    assert.equal((await handleGameBoss(req(body),env,origin)).status,200)
+  }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
+})
+
+test('expanded intimate Boss allows only existing-scene mechanics and both participants',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  const extended={
+    ...body,scenario:'sex',stage:3,playersCount:2,chainFamily:'manual',
+    allowedMechanics:[
+      ['resume-consented','shared-choice','slow-connection','stay-with-spark','gentle-checkin'],
+      ['trade-initiative','change-pacing','keep-thread','mutual-rhythm','initiative-offer'],
+      ['open-ending','together-decide','no-timer-finish','quiet-finale','choose-finish'],
+    ],
+    recent:[],chainOutcomes:[],bossHistory:[],
+  }
+  const draft={
+    title:'Финал без обязательств',
+    phases:[
+      {mechanic:'stay-with-spark',role:'both',caption:'Сцена остаётся такой, как вы сами решили.'},
+      {mechanic:'mutual-rhythm',role:'both',caption:'Комфортный ритм выбирают только двое.'},
+      {mechanic:'quiet-finale',role:'both',caption:'Финал остаётся совершенно открытым.'},
+    ],
+  }
+  try{
+    globalThis.fetch=async()=>groq(draft)
+    assert.equal((await handleGameBoss(req(extended),env,origin)).status,200)
+    globalThis.fetch=async()=>groq({...draft,phases:draft.phases.map((phase,i)=>
+      i===1?{...phase,role:'last-target'}:phase)})
+    assert.equal((await handleGameBoss(req(extended),env,origin)).status,422)
+    const bad={...extended,allowedMechanics:extended.allowedMechanics.map((choices,i)=>
+      i===2?[...choices.slice(0,4),'force-new-practice']:choices)}
+    assert.equal((await handleGameBoss(req(bad),env,origin)).status,400)
+  }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
+})
