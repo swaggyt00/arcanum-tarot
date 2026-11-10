@@ -66,9 +66,9 @@ try{
     version:1,scenario:'afterdark',stage:2,tension:82,turnsPlayed:14,
     chainFamily:'social',playersCount:2,
     allowedMechanics:[
-      ['night-callback','voluntary-ballot','opening-echo'],
-      ['double-improv','role-handoff','duel-remix'],
-      ['ensemble-remix','group-reveal','final-chorus'],
+      ['night-callback','voluntary-ballot','opening-echo','rumor-reversal','volunteer-spotlight'],
+      ['double-improv','role-handoff','duel-remix','night-alibi','mask-swap'],
+      ['ensemble-remix','group-reveal','final-chorus','midnight-verdict','last-reveal'],
     ],
     recent:[
       {actorIndex:0,targetIndex:1,type:'truth',risk:2,skipped:false,chains:['social']},
