@@ -247,3 +247,19 @@ test('Gemini generated decorative extras still fail the original hard gate',asyn
     assert.equal(count,2,'two invalid ideas discarded, no unsafe default condition')
   }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
 })
+
+test('unavailable modifier creator returns only sanitized provider diagnostics',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  const both={...env,GEMINI_API_KEY:'unit-gemini'}
+  try{
+    globalThis.fetch=async()=>Response.json({error:'provider unavailable'}, {status:503})
+    const response=await handleGameModifier(req(),both,origin)
+    assert.equal(response.status,503)
+    assert.equal(response.headers.get('X-AI-Error-Stage'),'create')
+    assert.equal(response.headers.get('X-AI-Attempts'),'groq:503,gemini:503')
+    assert.match(response.headers.get('Access-Control-Expose-Headers'),/X-AI-Attempts/)
+    assert.ok(!JSON.stringify([...response.headers]).includes(payload.cardText))
+    assert.ok(!JSON.stringify([...response.headers]).includes('unit-secret'))
+  }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
+})

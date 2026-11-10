@@ -65,6 +65,20 @@ function respond(body,status,origin,extra={}){
   }})
 }
 
+// Expose only provider status codes and the failed AI phase for live diagnosis.
+// Never include card text, model prompts, player data or credentials.
+function providerFailureHeaders(result,stage){
+  const headers={
+    'X-AI-Error-Stage':stage,
+    'Access-Control-Expose-Headers':'X-AI-Attempts, X-AI-Error-Stage, Retry-After',
+  }
+  if(result.retryAfterSeconds)headers['Retry-After']=String(result.retryAfterSeconds)
+  if(typeof result.attempts==='string'&&/^[a-z0-9:,.-]{1,120}$/.test(result.attempts)){
+    headers['X-AI-Attempts']=result.attempts
+  }
+  return headers
+}
+
 function possibleAxes(data){
   if(data.cardType==='truth')return ['specificity','reasoning','verbal-rule']
   if(data.scenario==='sex'&&intimate.test(data.cardText))return []
@@ -193,7 +207,7 @@ export async function handleGameModifier(request,env,origin){
       }
       const generated=await completeJSON(env,CREATOR,creativeInput,createSchema,'original_game_twist_v3',0.85,900)
       if(generated.error)return respond({error:'Не удалось придумать условие.'},generated.error,origin,
-        generated.retryAfterSeconds?{'Retry-After':String(generated.retryAfterSeconds)}:{})
+        providerFailureHeaders(generated,'create'))
       const candidate=validateDraft(generated.value,parsed)
       if(!candidate)continue
 
@@ -205,7 +219,7 @@ export async function handleGameModifier(request,env,origin){
         proposedCondition:candidate,
       },reviewSchema,'game_twist_review_v3',0.1,550)
       if(reviewed.error)return respond({error:'Не удалось проверить условие.'},reviewed.error,origin,
-        reviewed.retryAfterSeconds?{'Retry-After':String(reviewed.retryAfterSeconds)}:{})
+        providerFailureHeaders(reviewed,'review'))
       const judgment=reviewed.value
       const criteria=['harder','relevant','compatible','noNewTask','respectsBoundaries','nonDecorative','feasible','naturalRussian']
       if(!judgment||criteria.some(k=>judgment[k]!==true))continue
