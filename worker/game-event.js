@@ -95,13 +95,24 @@ function validateRequest(body){
   if(!latest&&body.allowedMechanics.some(x=>['mirror-type','contrast-type','change-theme'].includes(x)))return null
   if(!body.chainFamily&&body.allowedMechanics.includes('continue-theme'))return null
 
+  // Whitelist fields explicitly; arbitrary client keys are never sent to LLMs.
+  const sanitizedPlayers=body.players.map(p=>({
+    index:p.index,recentRisks:p.recentRisks.slice(0,5),skippedRecent:p.skippedRecent,
+  }))
+  const sanitizedRecent=body.recent.map(x=>({
+    actorIndex:x.actorIndex,type:x.type,risk:x.risk,skipped:x.skipped,
+    chains:x.chains.slice(0,2),modifierCount:x.modifierCount,
+  }))
+  const sanitizedEvents=body.events.map(x=>({
+    turn:x.turn,title:x.title,mechanics:x.mechanics.slice(0,2),accepted:x.accepted,
+  }))
   return {
     version:1,
     scenario:body.scenario,stage:body.stage,
     turnsPlayed:body.turnsPlayed,tension:body.tension,playersCount:body.playersCount,
     actorIndex:body.actorIndex,chainFamily:body.chainFamily,chainDepth:body.chainDepth,
     allowedMechanics:body.allowedMechanics,
-    players:body.players,recent:body.recent,events:body.events,
+    players:sanitizedPlayers,recent:sanitizedRecent,events:sanitizedEvents,
   }
 }
 
