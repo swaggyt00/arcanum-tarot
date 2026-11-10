@@ -4,7 +4,6 @@
   "compatibility_date": "2026-11-08",
   "vars": {
     "ALLOWED_ORIGIN": "https://swaggyt00.github.io",
-    "GEMINI_GAME_PRIMARY": "true",
     "GEMINI_GAME_MODEL": "gemini-3.5-flash-lite"
   },
   "secrets": {
