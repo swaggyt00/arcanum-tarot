@@ -2,6 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import worker from './worker.js'
 import { handleGameModifier } from './game-modifier.js'
+import { resetGameProviderStateForTests } from './game-providers.js'
 
 const origin='https://swaggyt00.github.io'
 const env={GROQ_API_KEY:'unit-secret',ALLOWED_ORIGIN:origin}
@@ -197,4 +198,52 @@ test('rejects grammatically broken second intervals and overly permissive review
     assert.equal((await handleGameModifier(req(),env,origin)).status,422)
     assert.equal(calls,4)
   }finally{globalThis.fetch=old}
+})
+
+
+test('Gemini continues independent creative generation and review after Groq 429',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  let groqCalls=0,geminiCalls=0
+  const geminiEnv={...env,GEMINI_API_KEY:'unit-gemini'}
+  try{
+    globalThis.fetch=async url=>{
+      if(String(url).includes('api.groq.com')){
+        groqCalls++
+        return Response.json({error:'rate limit'},{
+          status:429,headers:{'retry-after':'60','x-ratelimit-remaining-tokens':'0'},
+        })
+      }
+      geminiCalls++
+      const value=geminiCalls===1?draft:approve
+      return Response.json({candidates:[{content:{parts:[{text:JSON.stringify(value)}]}}]})
+    }
+    const result=await handleGameModifier(req(),geminiEnv,origin)
+    assert.equal(result.status,200)
+    assert.deepEqual(await result.json(),{axis:draft.axis,label:draft.label,description:draft.description})
+    assert.equal(result.headers.get('X-AI-Creator-Provider'),'gemini')
+    assert.equal(result.headers.get('X-AI-Provider'),'gemini')
+    assert.equal(result.headers.get('X-AI-Fallback'),'true')
+    assert.equal(groqCalls,1,'Groq cooldown applies across creator and reviewer')
+    assert.equal(geminiCalls,2)
+  }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
+})
+
+test('Gemini generated decorative extras still fail the original hard gate',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  const bad={...draft,label:'ТИХИЙ ВЗДОХ',
+    description:'После выполнения подними брови, шепни «Вот так» и слегка улыбнись всем гостям.'}
+  try{
+    let count=0
+    globalThis.fetch=async()=>{
+      count++
+      return Response.json({candidates:[{content:{parts:[{text:JSON.stringify(bad)}]}}]})
+    }
+    const result=await handleGameModifier(req(),{
+      ...env,GROQ_API_KEY:undefined,GEMINI_API_KEY:'unit-gemini',
+    },origin)
+    assert.equal(result.status,422)
+    assert.equal(count,2,'two invalid ideas discarded, no unsafe default condition')
+  }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
 })
