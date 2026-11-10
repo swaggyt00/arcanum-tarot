@@ -57,6 +57,7 @@ try{
     console.log('Creative AI attempt',attempt,'status:',response.status,
       'reviewer:',response.headers.get('X-AI-Provider'),
       'creator:',response.headers.get('X-AI-Creator-Provider'),
+      'failed-stage:',response.headers.get('X-AI-Error-Stage'),
       'attempts:',response.headers.get('X-AI-Attempts'),
       JSON.stringify(candidate))
     if(response.status===422)continue // Rejected creativity is expected sometimes.
