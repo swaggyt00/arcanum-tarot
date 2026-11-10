@@ -165,6 +165,32 @@ test('Boss route validates CORS, size and game-only routing without changing Tar
   assert.equal(tarot.status,400)
 })
 
+
+test('live-style imperatives inside Boss captions are discarded, not displayed as new challenges',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  try{
+    globalThis.fetch=async()=>groq({
+      ...proposal,
+      phases:proposal.phases.map((phase,index)=>({
+        ...phase,
+        caption:[
+          'Выбирай, кто откроет новую нить доверия.',
+          'Смените маски и взгляните друг в друга без слов.',
+          'Завершите вечер общим признанием.',
+        ][index],
+      })),
+    })
+    const response=await handleGameBoss(req(),env,origin)
+    assert.equal(response.status,200)
+    const result=await response.json()
+    assert.equal(result.phases.length,3)
+    assert.ok(result.phases.every(p=>p.caption===''),
+      'model-generated commands are not allowed to become secondary Boss tasks')
+    assert.deepEqual(result.phases.map(p=>p.mechanic),proposal.phases.map(p=>p.mechanic))
+  }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
+})
+
 test('new Boss win and defeat outcomes reach AI while extra personal data is dropped',async()=>{
   resetGameProviderStateForTests()
   const original=globalThis.fetch
