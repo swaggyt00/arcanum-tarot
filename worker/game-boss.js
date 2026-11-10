@@ -65,7 +65,7 @@ function validateRequest(body) {
     ||!Number.isFinite(body.tension)||body.tension<0||body.tension>160
     ||!Number.isInteger(body.playersCount)||body.playersCount<2||body.playersCount>6
     ||body.chainFamily!==null&&!safeToken(body.chainFamily))return null
-  if((scenario==='party'||scenario==='afterdark')&&body.playersCount<3)return null
+  if(scenario==='party'&&body.playersCount<3)return null
   if((scenario==='couple'||scenario==='sex')&&body.playersCount!==2)return null
   if(!Array.isArray(body.allowedMechanics)||body.allowedMechanics.length!==3
     ||body.allowedMechanics.some((p,i)=>!Array.isArray(p)
