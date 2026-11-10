@@ -60,6 +60,8 @@ test('Groq 429 -> Gemini model, schema and payload; next call skips Groq cooldow
       assert.equal(init.headers['x-goog-api-key'],'fake-gemini-secret')
       assert.ok(!String(url).includes('fake-gemini-secret'),'secret must never go in URL')
       const data=JSON.parse(init.body)
+      assert.equal(data.generationConfig.thinkingConfig.thinkingLevel,'low')
+      assert.equal(data.generationConfig.temperature,undefined)
       assert.equal(data.generationConfig.responseMimeType,'application/json')
       assert.deepEqual(data.generationConfig.responseSchema,shape.schema)
       assert.ok(data.systemInstruction.parts[0].text.includes('Pick one card'))
@@ -169,4 +171,21 @@ test('structured telemetry captures real limits without logging prompts or crede
     assert.ok(!output.includes('v09:couple-test'))
     assert.ok(!output.includes('Pick one card'))
   }finally{globalThis.fetch=original;console.log=log}
+})
+
+
+test('a server-side Gemini-first canary chooses real Gemini without a client flag',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  let groqCalls=0,geminiCalls=0
+  try{
+    globalThis.fetch=async (url)=>{
+      if(String(url).includes('api.groq.com')){groqCalls++;return groq()}
+      geminiCalls++;return gemini()
+    }
+    const result=await completeGameJSON({...env,GEMINI_GAME_PRIMARY:'true'},shape)
+    assert.equal(result.provider,'gemini')
+    assert.equal(geminiCalls,1)
+    assert.equal(groqCalls,0)
+  }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
 })
