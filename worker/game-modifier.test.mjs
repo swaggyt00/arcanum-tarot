@@ -90,6 +90,22 @@ test('rejects decorative reactions, after-task gestures and canned labels before
 })
 
 
+
+test('rejects artificial model-invented hyphenated headings even if review would approve',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  const unnatural={...draft,axis:'tempo',label:'Трёхсекундный темп‑переключ',
+    description:'В течение пятнадцати секунд каждые три секунды меняй скорость речи, сохраняя чёткую дикцию и уверенный тон.',
+    whyHarder:'Смена темпа каждые три секунды требует дополнительного контроля.'}
+  try{
+    let calls=0
+    globalThis.fetch=async()=>{calls++;return completion(unnatural)}
+    const response=await handleGameModifier(req(),env,origin)
+    assert.equal(response.status,422)
+    assert.equal(calls,2,'reject invented compound before independent review')
+  }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
+})
+
 test('blocks real production failure: wrong Russian agreement and uncheckable letter puzzle',async()=>{
   resetGameProviderStateForTests()
   const original=globalThis.fetch

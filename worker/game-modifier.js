@@ -48,7 +48,7 @@ const CREATOR=[
   'Одна понятная игровая трудность, а не два-три искусственных правила, которые мешают выполнить само задание.',
   'Проверь арифметику и реальное время. Если за 15 секунд менять стиль каждые 3 секунды, получится максимум 5 смен, а не 9. Не требуй невозможного числа этапов.',
   'Пиши естественным грамматически правильным русским языком: «каждые три секунды», а не «каждый третий секунды». Не перегружай условие тремя или четырьмя одновременными запретами.',
-  'Описание: 55–205 символов, законченное правило на русском языке. Название: 6–48 символов, 2–5 выразительных слов.',
+  'Описание: 55–205 символов, законченное правило на русском языке. Название: 6–48 символов, 2–5 простых русских слов без дефисов и несуществующих сложных слов.',
   'Избегай одинаковых формулировок и тем из recentLabels. Отвечай строго JSON: axis, label, description, whyHarder.',
   'Выбери axis лишь из allowedAxes. Почему условие сложнее поясни в whyHarder (не показывается игрокам).',
 ].join(' ')
@@ -153,6 +153,10 @@ function validateDraft(draft,data){
   const whyHarder=draft.whyHarder.trim().replace(/\s+/g,' ')
   if(label.length<6||label.length>48||description.length<55||description.length>205
     ||whyHarder.length<10||whyHarder.length>260)return null
+  // Players must instantly read a natural heading, not AI-made compounds
+  // like "темп‑переключ". A short plain-language phrase is sufficient.
+  if(label.split(/\s+/).length<2||label.split(/\s+/).length>5
+    ||/[-‐‑–—]/u.test(label))return null
   if(/[\n\r<>\u0000-\u001f{}]/.test(draft.label+draft.description+draft.whyHarder))return null
   if(/https?:|www\.|@|#|\*/i.test(label+description))return null
   if(CANNED.has(label.toUpperCase())||data.recentLabels.some(x=>x.toLowerCase()===label.toLowerCase()))return null
