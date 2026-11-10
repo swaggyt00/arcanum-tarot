@@ -127,7 +127,8 @@ async function callGemini(env,input,route) {
           systemInstruction:{parts:[{text:input.system}]},
           contents:[{role:'user',parts:[{text:JSON.stringify(input.payload)}]}],
           generationConfig:{
-            temperature:input.temperature,
+            // Gemini 3.8 Flash removed temperature/topK/topP controls.
+            thinkingConfig:{thinkingLevel:'low'},
             maxOutputTokens:Math.min(4096,Math.max(1400,input.tokens*2)),
             responseMimeType:'application/json',
             responseSchema:input.schema,
@@ -161,7 +162,10 @@ export async function completeGameJSON(env,input) {
   ]
   if(!configured.length)return {error:503}
   const now=epoch()
-  const available=configured.filter(provider=>STATE[provider].until<=now)
+  // Canary preference is deploy-time only, never selected by public requests.
+  // Default production order stays Groq -> Gemini.
+  const order=env.GEMINI_GAME_PRIMARY === 'true' ? [...configured].reverse() : configured
+  const available=order.filter(provider=>STATE[provider].until<=now)
   if(!available.length){
     const minWait=Math.max(1,Math.ceil(Math.min(...configured.map(p=>STATE[p].until-now))/1000))
     emit({provider:'none',route:input.route,status:'all_in_cooldown',retryAfterSeconds:minWait})
