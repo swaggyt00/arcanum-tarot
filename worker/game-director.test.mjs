@@ -190,3 +190,37 @@ test('AI Director uses player and event memory without receiving names or spoken
     assert.equal((await handleGameDirector(req(injected),env,origin)).status,400)
   }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
 })
+
+test('Director 2.0 validates and forwards only anonymous pacing and target counts',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  const withPacing={
+    ...body,actorIndex:0,
+    players:[
+      {index:0,lastRisks:[1,2],skippedRecent:1,targetedRecent:2,hiddenName:'DO_NOT_SEND'},
+      {index:1,lastRisks:[2,3],skippedRecent:0,targetedRecent:4},
+    ],
+    pacing:{
+      intent:'pivot',momentum:3,preferType:'dare',focusChain:null,
+      avoidChain:'social',suppressOptionalModifier:false,privateComment:'DO_NOT_SEND',
+    },
+  }
+  try{
+    let sent
+    globalThis.fetch=async(_url,options)=>{
+      sent=JSON.parse(options.body)
+      return Response.json({choices:[{message:{content:JSON.stringify({
+        selectedId:body.candidates[0].id,intro:'Новый ритм раунда.',addCondition:false,
+      })}}]})
+    }
+    const response=await handleGameDirector(req(withPacing),env,origin)
+    assert.equal(response.status,200)
+    const data=JSON.parse(sent.messages[1].content)
+    assert.equal(data.pacing.intent,'pivot')
+    assert.equal(data.pacing.avoidChain,'social')
+    assert.equal(data.players[1].targetedRecent,4)
+    assert.ok(!JSON.stringify(data).includes('DO_NOT_SEND'))
+    assert.equal((await handleGameDirector(req({...withPacing,pacing:{...withPacing.pacing,intent:'force-risk'}}),env,origin)).status,400)
+    assert.equal((await handleGameDirector(req({...withPacing,players:[{...withPacing.players[0],targetedRecent:500}]}),env,origin)).status,400)
+  }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
+})
