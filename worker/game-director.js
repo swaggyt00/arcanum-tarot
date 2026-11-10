@@ -38,7 +38,14 @@ const SYSTEM = [
   'Поле intro — одна короткая живая русская подводка к следующему повороту, 6–18 слов.',
   'Подводка эмоциональна и игрива, но НЕ содержит инструкций, конкретных действий, таймеров, ссылок на невидимую карточку, имён игроков или сексуальных подробностей.',
   'Никакой морали, канцелярита, извинений, ссылок на ИИ, JSON или ограничения.',
-  'Верни строго JSON с полями selectedId, intro, addCondition и scenePlan.',
+  'Создай также НОВУЮ AI Chains цепочку с оригинальным кратким названием chainPlan.title (6–55 символов), и тремя будущими фазами chainPlan.beats. Каждый beat содержит phase, normalTarget, boldTarget, line.',
+  'normalTarget применяется при выборе 🔥 или 🔥🔥, boldTarget — только при добровольном выборе 🔥🔥🔥. Это НЕ повышает риск задания и никогда не меняет игрока, который сейчас ходит.',
+  'Значения normalTarget и boldTarget только: fair, opener, first-target, previous-actor, previous-target. Это реальные обезличенные роли из истории игры; при отсутствии подходящего адресата приложение выбирает обычную допустимую цель.',
+  'Для компании используй социальную эстафету, возвращения к прежним участникам и неожиданные смены фокуса. Для sex всегда выбирай оба target-правила fair: физическую сцену не следует разрывать.',
+  'Каждый beat.line — оригинальная короткая русская подводка 12–125 символов без новых заданий, команд, откровенных действий, упоминаний неуслышанных ответов или выдуманных эмоций. Название и подводки не должны повторяться дословно.',
+  'В уже активной цепочке activeChain продолжай историю, а не создавай новую за спиной участников. Если цепочка завершилась или была пропущена, разрешён новый сюжет.',
+  'chainOutcomes сообщает только о завершении, пропуске или невозможности предыдущей цепочки. Никогда не превращай пропуск в наказание.',
+  'Верни строго JSON с полями selectedId, intro, addCondition, scenePlan и chainPlan.',
 ].join(' ')
 
 function respond(data, status, origin, extra = {}) {
@@ -60,6 +67,13 @@ const validTypeOrNull = value => value === null || value === 'truth' || value ==
 const validChainOrNull = value => value === null || safeChain(value)
 const storyPhases = ['build','twist','payoff']
 const validPreferredType = value => ['truth','dare','either'].includes(value)
+const chainTargetRules = ['fair','opener','first-target','previous-actor','previous-target']
+const validChainResult = value => ['finished','skipped','unavailable'].includes(value)
+const unsafeChainCopy = /[{}<>\r\n\u0000-\u001f]|https?:|www\.|@|#|(?:обязан|застав|прикаж|накаж|наказ|сними\s+бель|занимайся\s+сексом|поцелуй|трах|минет|кунилинг|проникнов|не\s+сможешь\s+отказ)/i
+const chainCommand = /^(?:сделай|назови|скажи|покажи|подойди|сними|выбери|ответь|выполни|целуй|попроси|начни|заставь)(?=\s|[!,.?:]|$)/i
+const cleanChainText = (value,min,max) => typeof value === 'string'
+  && value === value.trim() && value.length>=min && value.length<=max
+  && !unsafeChainCopy.test(value) && !chainCommand.test(value) ? value : null
 
 function validateRequest(body) {
   if (!body || typeof body !== 'object' || body.version !== 1) return null
@@ -115,6 +129,19 @@ function validateRequest(body) {
     || !safeChain(activeScene.chain)
     || !validPreferredType(activeScene.preferredType)
   ))return null
+  const activeChain=body.activeChain??null
+  if(activeChain!==null&&(
+    typeof activeChain!=='object'
+    ||!Number.isInteger(activeChain.beatIndex)||activeChain.beatIndex<0||activeChain.beatIndex>2
+    ||!Number.isInteger(activeChain.openerActorIndex)||activeChain.openerActorIndex<0||activeChain.openerActorIndex>5
+    ||!(activeChain.openerTargetIndex===null||(Number.isInteger(activeChain.openerTargetIndex)&&activeChain.openerTargetIndex>=0&&activeChain.openerTargetIndex<=5))
+    ||!chainTargetRules.includes(activeChain.normalTarget)
+    ||!chainTargetRules.includes(activeChain.boldTarget)
+  ))return null
+  const chainOutcomes=body.chainOutcomes??[]
+  if(!Array.isArray(chainOutcomes)||chainOutcomes.length>5
+    ||chainOutcomes.some(x=>!x||typeof x!=='object'
+      ||!validChainResult(x.result)||!safeChain(x.openingChain)))return null
   const players=Array.isArray(body.players)?body.players:[]
   const events=Array.isArray(body.events)?body.events:[]
   const actorIndex=body.actorIndex ?? 0
@@ -124,6 +151,8 @@ function validateRequest(body) {
     ||!Number.isInteger(p.skippedRecent)||p.skippedRecent<0||p.skippedRecent>12
     ||(p.targetedRecent!==undefined&&(!Number.isInteger(p.targetedRecent)||p.targetedRecent<0||p.targetedRecent>16))))return null
   if(players.length>0 && actorIndex>=players.length)return null
+  if(activeChain&&players.length>0&&(activeChain.openerActorIndex>=players.length
+    ||activeChain.openerTargetIndex!==null&&activeChain.openerTargetIndex>=players.length))return null
   if(recent.some(item=>players.length>0&&item.actorIndex>=players.length))return null
   if(events.length>6||events.some(x=>!Number.isInteger(x.turn)||x.turn<0
     ||typeof x.title!=='string'||x.title.length>55||/[{}<>\u0000-\u001f]/.test(x.title)
@@ -150,6 +179,16 @@ function validateRequest(body) {
     chainDepth: body.chainDepth, recent, candidates,
     actorIndex, players:sanitizedPlayers, events:sanitizedEvents,
     pacing:sanitizedPacing,
+    chainOutcomes:chainOutcomes.map(item=>({
+      result:item.result,openingChain:item.openingChain,
+    })),
+    activeChain:activeChain===null?null:{
+      beatIndex:activeChain.beatIndex,
+      openerActorIndex:activeChain.openerActorIndex,
+      openerTargetIndex:activeChain.openerTargetIndex,
+      normalTarget:activeChain.normalTarget,
+      boldTarget:activeChain.boldTarget,
+    },
     activeScene:activeScene===null?null:{
       originTurn:activeScene.originTurn,beatIndex:activeScene.beatIndex,
       phase:activeScene.phase,chain:activeScene.chain,preferredType:activeScene.preferredType,
@@ -186,6 +225,28 @@ export async function handleGameDirector(request, env, origin) {
       selectedId:{type:'string',enum:parsed.candidates.map(candidate=>candidate.id)},
       intro:{type:'string'},
       addCondition:{type:'boolean'},
+      chainPlan:{
+        type:'object',
+        properties:{
+          title:{type:'string'},
+          beats:{
+            type:'array',
+            items:{
+              type:'object',
+              properties:{
+                phase:{type:'string',enum:storyPhases},
+                normalTarget:{type:'string',enum:chainTargetRules},
+                boldTarget:{type:'string',enum:chainTargetRules},
+                line:{type:'string'},
+              },
+              required:['phase','normalTarget','boldTarget','line'],
+              additionalProperties:false,
+            },
+          },
+        },
+        required:['title','beats'],
+        additionalProperties:false,
+      },
       scenePlan:{
         type:'object',
         properties:{
@@ -207,7 +268,7 @@ export async function handleGameDirector(request, env, origin) {
         additionalProperties:false,
       },
     },
-    required:['selectedId','intro','addCondition','scenePlan'],
+    required:['selectedId','intro','addCondition','scenePlan','chainPlan'],
     additionalProperties:false,
   }
   try {
@@ -218,7 +279,7 @@ export async function handleGameDirector(request, env, origin) {
       schema,
       name:'game_director_pick',
       temperature:0.65,
-      tokens:1250,
+      tokens:1700,
     })
     if (!generated.value) {
       const status=generated.error===429?429:generated.error===503?503:502
@@ -247,6 +308,23 @@ export async function handleGameDirector(request, env, origin) {
         phase:beat.phase,chain:beat.chain,preferredType:beat.preferredType,
       }))}
       :null
+    const proposedChain=result?.chainPlan
+    const chainBeats=proposedChain?.beats
+    const chainTitle=cleanChainText(proposedChain?.title,6,55)
+    const validChain=Boolean(scenePlan&&chainTitle&&Array.isArray(chainBeats)
+      &&chainBeats.length===3&&chainBeats.every((beat,index)=>beat
+        &&beat.phase===storyPhases[index]
+        &&chainTargetRules.includes(beat.normalTarget)
+        &&chainTargetRules.includes(beat.boldTarget)))
+    const chainPlan=validChain?{
+      title:chainTitle,
+      beats:chainBeats.map((beat,index)=>({
+        phase:storyPhases[index],
+        normalTarget:parsed.scenario==='sex'?'fair':beat.normalTarget,
+        boldTarget:parsed.scenario==='sex'?'fair':beat.boldTarget,
+        line:cleanChainText(beat.line,12,125)??'',
+      })),
+    }:null
     const intro = typeof result?.intro === 'string'
       ? result.intro.replace(/[\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,150)
       : ''
@@ -255,6 +333,7 @@ export async function handleGameDirector(request, env, origin) {
       intro,
       addCondition:parsed.allowCondition && (parsed.forceCondition || result.addCondition === true),
       scenePlan,
+      chainPlan,
     },200,origin,{'X-AI-Provider':generated.provider,'X-AI-Fallback':String(generated.fallback),
       'X-AI-Attempts':generated.attempts})
   } catch {

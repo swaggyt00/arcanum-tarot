@@ -319,3 +319,112 @@ test('social story twist must actually contrast the opening chain if possible',a
       'a valid card is kept, but a fake social twist is ignored')
   }finally{globalThis.fetch=previous;resetGameProviderStateForTests()}
 })
+
+test('AI Chains return original playable social callbacks and sanitize private inputs',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  const beats=[
+    {phase:'build',normalTarget:'opener',boldTarget:'first-target',
+      line:'Инициатива возвращается к тому, кто начал разговор.'},
+    {phase:'twist',normalTarget:'previous-actor',boldTarget:'previous-target',
+      line:'Прежний участник вновь оказывается в центре сюжета.'},
+    {phase:'payoff',normalTarget:'first-target',boldTarget:'opener',
+      line:'История замыкает круг на первых участниках.'},
+  ]
+  const proposal={
+    ...body,scenario:'party',actorIndex:1,
+    players:[
+      {index:0,lastRisks:[2],skippedRecent:0,targetedRecent:2},
+      {index:1,lastRisks:[1],skippedRecent:0,targetedRecent:0},
+    ],
+    activeChain:{
+      beatIndex:0,openerActorIndex:0,openerTargetIndex:1,
+      normalTarget:'opener',boldTarget:'first-target',
+      hiddenComment:'DO_NOT_SEND',
+    },
+    chainOutcomes:[{result:'finished',openingChain:'tease',hiddenName:'DO_NOT_SEND'}],
+  }
+  try{
+    let sent
+    globalThis.fetch=async (_url,options)=>{
+      sent=JSON.parse(options.body)
+      return Response.json({choices:[{message:{content:JSON.stringify({
+        selectedId:body.candidates[0].id,
+        intro:'Вечер набирает обороты.',addCondition:false,
+        scenePlan:{beats:[
+          {phase:'build',chain:'tease',preferredType:'dare'},
+          {phase:'twist',chain:'kissing',preferredType:'either'},
+          {phase:'payoff',chain:'tease',preferredType:'truth'},
+        ]},
+        chainPlan:{title:'Ночная эстафета',beats},
+      })}}]})
+    }
+    const response=await handleGameDirector(req(proposal),env,origin)
+    assert.equal(response.status,200)
+    const data=await response.json()
+    assert.equal(data.chainPlan.title,'Ночная эстафета')
+    assert.equal(data.chainPlan.beats[0].boldTarget,'first-target')
+    assert.equal(data.chainPlan.beats[1].normalTarget,'previous-actor')
+    assert.equal(data.chainPlan.beats.length,3)
+    const metadata=JSON.parse(sent.messages[1].content)
+    assert.equal(metadata.activeChain.openerActorIndex,0)
+    assert.equal(metadata.chainOutcomes[0].result,'finished')
+    assert.ok(!JSON.stringify(metadata).includes('DO_NOT_SEND'))
+    assert.ok(sent.response_format.json_schema.schema.required.includes('chainPlan'))
+    const scheme=sent.response_format.json_schema.schema.properties.chainPlan
+    assert.ok(scheme.properties.beats.items.properties.boldTarget.enum.includes('first-target'))
+    assert.equal((await handleGameDirector(req({...proposal,activeChain:{
+      ...proposal.activeChain,normalTarget:'force-player',
+    }}),env,origin)).status,400)
+  }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
+})
+
+test('malicious Chain copy is dropped without blocking an approved card',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  try{
+    globalThis.fetch=async()=>Response.json({choices:[{message:{content:JSON.stringify({
+      selectedId:body.candidates[0].id,intro:'Переходим дальше.',addCondition:false,
+      scenePlan:{beats:[
+        {phase:'build',chain:'tease',preferredType:'truth'},
+        {phase:'twist',chain:'kissing',preferredType:'dare'},
+        {phase:'payoff',chain:'tease',preferredType:'truth'},
+      ]},
+      chainPlan:{title:'<script>attack</script>',beats:[
+        {phase:'build',normalTarget:'opener',boldTarget:'first-target',line:'Продолжаем историю.'},
+        {phase:'twist',normalTarget:'fair',boldTarget:'fair',line:'История поворачивает.'},
+        {phase:'payoff',normalTarget:'fair',boldTarget:'fair',line:'Сюжет завершается.'},
+      ]},
+    })}}]})
+    const response=await handleGameDirector(req(),env,origin)
+    assert.equal(response.status,200)
+    const data=await response.json()
+    assert.equal(data.selectedId,body.candidates[0].id)
+    assert.equal(data.chainPlan,null)
+  }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
+})
+
+test('intimate AI Chain never changes partner targeting with risk',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  try{
+    globalThis.fetch=async()=>Response.json({choices:[{message:{content:JSON.stringify({
+      selectedId:body.candidates[0].id,intro:'Продолжаем.',addCondition:false,
+      scenePlan:{beats:[
+        {phase:'build',chain:'tease',preferredType:'dare'},
+        {phase:'twist',chain:'tease',preferredType:'either'},
+        {phase:'payoff',chain:'tease',preferredType:'truth'},
+      ]},
+      chainPlan:{title:'Нить близости',beats:[
+        {phase:'build',normalTarget:'opener',boldTarget:'previous-target',line:'Момент продолжается в прежней атмосфере.'},
+        {phase:'twist',normalTarget:'first-target',boldTarget:'opener',line:'Продолжение сохраняет выбранный характер сцены.'},
+        {phase:'payoff',normalTarget:'previous-actor',boldTarget:'first-target',line:'История возвращается к исходному ритму.'},
+      ]},
+    })}}]})
+    const response=await handleGameDirector(req(),env,origin)
+    assert.equal(response.status,200)
+    const data=await response.json()
+    assert.ok(data.chainPlan)
+    assert.ok(data.chainPlan.beats.every(b=>b.normalTarget==='fair'&&b.boldTarget==='fair'))
+  }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
+})
