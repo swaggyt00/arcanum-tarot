@@ -22,7 +22,10 @@ const AUTHOR=[
   'contrast-type — следующая карточка будет противоположного типа предыдущей.',
   'change-theme — следующая карточка уйдёт от основных тем двух последних ходов.',
   'continue-theme — следующая карточка продолжит тему текущей сюжетной цепочки.',
+  'Если доступно несколько механик, предпочитай сочетание ДВУХ разных совместимых механик, а не одиночный риск-перехват.',
   'Выбери 1 либо 2 совместимых механики из allowedMechanics и придумай для их сочетания индивидуальное название и точное описание.',
+  'Пример корректного формата: mechanics=[risk-handoff,truth-only], title=Перехват признаний, description=Следующий по кругу игрок выбирает уровень риска, а карточка следующего хода обязательно будет Правдой. Это пример формата, НЕ повторяй его дословно.',
+  'При выборе mirror-type или contrast-type учитывай type последней записи recent. Если выбрано change-theme — не повторяй темы из двух последних ходов; continue-theme — сохрани chainFamily.',
   'Событие обязано реально изменить следующий ход; не добавляй отдельные задания или задания после карточки.',
   'В описании явно объясни ВСЕ выбранные механики. Не обещай то, чего нет в mechanics.',
   'Историю используй только как факты о структуре ходов: риск, Правда/Действие, пропуски, темы, были ли условия. Не заявляй, что знаешь устные ответы или эмоции участников.',
@@ -39,6 +42,8 @@ const JUDGE=[
   'Проверь, что описание точно и полностью соответствует перечисленным mechanics. Партнёрский выбор риска, ограничение типа карточки и тематические правила должны быть ясно отражены, если выбраны.',
   'Никаких дополнительных непредусмотренных правил, принудительного повышения риска, интимных действий, наказаний, угроз, санкций за пропуск.',
   'Проверь выполнимость и совместимость, естественность русского, реальную вариативность по истории, отсутствие выдуманных ответов игроков.',
+  'groundedInHistory=true, когда событие не приписывает людям несуществующие устные ответы и согласуется с известными типами/рисками/темами. Не требуй пересказа конкретных ответов или обязательного упоминания истории в описании.',
+  'original=true для нового названия и творческого сочетания реально исполнимых механик. Допускается уже известная отдельная механика, если контекст и сочетание действительно новые.',
   'Отклони повторяющиеся/пустые «перехват», «двойная ставка» без нового контекста, а также событие, которое не соответствует эффектам.',
   'Возвращай JSON: matchesMechanics, changesGameplay, feasible, nonCoercive, groundedInHistory, original, clearRussian, reason.',
 ].join(' ')
@@ -174,7 +179,8 @@ export async function handleGameEvent(request,env,origin){
     additionalProperties:false,
   }
   try{
-    // One fresh retry if the author or reviewer produces something unusable.
+    // Diagnostics only contain categories, never private state or generated text.
+    const rejectedStages=[]
     for(let attempt=0;attempt<2;attempt++){
       const creative=await completeGameJSON(env,{
         route:'game-event-create',system:AUTHOR,
@@ -188,7 +194,10 @@ export async function handleGameEvent(request,env,origin){
         creative.error===429?429:502,origin,
         creative.retryAfterSeconds?{'Retry-After':String(creative.retryAfterSeconds)}:{})
       const candidate=validateCandidate(creative.value,input)
-      if(!candidate)continue
+      if(!candidate){
+        rejectedStages.push('draft-validation')
+        continue
+      }
       const reviewed=await completeGameJSON(env,{
         route:'game-event-review',system:JUDGE,
         payload:{scenario:input.scenario,stage:input.stage,
@@ -201,7 +210,10 @@ export async function handleGameEvent(request,env,origin){
         reviewed.error===429?429:502,origin,
         reviewed.retryAfterSeconds?{'Retry-After':String(reviewed.retryAfterSeconds)}:{})
       const required=['matchesMechanics','changesGameplay','feasible','nonCoercive','groundedInHistory','original','clearRussian']
-      if(required.some(key=>reviewed.value[key]!==true))continue
+      if(required.some(key=>reviewed.value[key]!==true)){
+        rejectedStages.push('semantic-review')
+        continue
+      }
       const {title,description,mechanics}=candidate
       return respond({title,description,mechanics},200,origin,{
         'X-AI-Provider':reviewed.provider,
@@ -209,6 +221,7 @@ export async function handleGameEvent(request,env,origin){
         'X-AI-Fallback':String(Boolean(creative.fallback||reviewed.fallback)),
       })
     }
-    return respond({error:'Не удалось придумать достаточно хорошее событие.'},422,origin)
+    return respond({error:'Не удалось придумать достаточно хорошее событие.',
+      failureStages:rejectedStages},422,origin)
   }catch{return respond({error:'AI-события временно недоступны.'},502,origin)}
 }

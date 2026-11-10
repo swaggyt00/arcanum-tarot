@@ -33,7 +33,7 @@ try {
     const provider=response.headers.get('X-AI-Provider')
     console.log('LIVE AI EVENT:',JSON.stringify({attempt,status:response.status,
       provider,mechanics:result?.mechanics,title:result?.title,description:result?.description,
-      error:result?.error}))
+      error:result?.error,failureStages:result?.failureStages}))
     if(response.status===429){
       console.log('PARTIAL: Groq and Gemini are rate-limited; no event is required for game continuity.')
       process.exitCode=0
