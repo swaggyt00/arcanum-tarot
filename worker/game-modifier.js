@@ -1,3 +1,5 @@
+import { completeGameJSON } from './game-providers.js'
+
 /**
  * Без Фильтров — original AI difficulty generation v3.
  *
@@ -55,10 +57,11 @@ const REVIEWER=[
   'Верни JSON с булевыми полями harder, relevant, compatible, noNewTask, respectsBoundaries, nonDecorative и коротким reason.',
 ].join(' ')
 
-function respond(body,status,origin){
+function respond(body,status,origin,extra={}){
   return new Response(JSON.stringify(body),{status,headers:{
     'Content-Type':'application/json; charset=utf-8',
     'Cache-Control':'no-store','Vary':'Origin','Access-Control-Allow-Origin':origin,
+    ...extra,
   }})
 }
 
@@ -136,25 +139,10 @@ function validateDraft(draft,data){
 }
 
 async function completeJSON(env,system,payload,schema,name,temperature,tokens){
-  const model=env.GROQ_GAME_MODEL||DEFAULT_MODEL
-  const strict=/^openai\/gpt-oss-(20b|120b)$/.test(model)
-  const response=await fetch('https://api.groq.com/openai/v1/chat/completions',{
-    method:'POST',
-    headers:{Authorization:'Bearer '+env.GROQ_API_KEY,'Content-Type':'application/json'},
-    body:JSON.stringify({
-      model,temperature,max_completion_tokens:tokens,
-      ...(strict?{reasoning_effort:'low'}:{}),
-      response_format:strict
-        ?{type:'json_schema',json_schema:{name,strict:true,schema}}
-        :{type:'json_object'},
-      messages:[{role:'system',content:system},{role:'user',content:JSON.stringify(payload)}],
-    }),
+  return completeGameJSON(env,{
+    route:name==='original_game_twist_v3'?'game-modifier-create':'game-modifier-review',
+    system,payload,schema,name,temperature,tokens,
   })
-  if(!response.ok)return {error:response.status===429?429:502}
-  const json=await response.json().catch(()=>null)
-  try{
-    return {value:JSON.parse(json?.choices?.[0]?.message?.content)}
-  }catch{return {error:502}}
 }
 
 export async function handleGameModifier(request,env,origin){
@@ -204,7 +192,8 @@ export async function handleGameModifier(request,env,origin){
         retryGuidance:'Предыдущий вариант не прошёл проверку. Придумай ДРУГОЕ конкретное ограничение: оно должно измеримо усложнять выполнение исходной карточки, не добавлять новую задачу, быть 55–205 символов и не содержать декоративных жестов.',
       }
       const generated=await completeJSON(env,CREATOR,creativeInput,createSchema,'original_game_twist_v3',0.85,900)
-      if(generated.error)return respond({error:'Не удалось придумать условие.'},generated.error,origin)
+      if(generated.error)return respond({error:'Не удалось придумать условие.'},generated.error,origin,
+        generated.retryAfterSeconds?{'Retry-After':String(generated.retryAfterSeconds)}:{})
       const candidate=validateDraft(generated.value,parsed)
       if(!candidate)continue
 
@@ -215,12 +204,17 @@ export async function handleGameModifier(request,env,origin){
         cardType:parsed.cardType,
         proposedCondition:candidate,
       },reviewSchema,'game_twist_review_v3',0.1,550)
-      if(reviewed.error)return respond({error:'Не удалось проверить условие.'},reviewed.error,origin)
+      if(reviewed.error)return respond({error:'Не удалось проверить условие.'},reviewed.error,origin,
+        reviewed.retryAfterSeconds?{'Retry-After':String(reviewed.retryAfterSeconds)}:{})
       const judgment=reviewed.value
       const criteria=['harder','relevant','compatible','noNewTask','respectsBoundaries','nonDecorative','feasible','naturalRussian']
       if(!judgment||criteria.some(k=>judgment[k]!==true))continue
       const {axis,label,description}=candidate
-      return respond({axis,label,description},200,origin)
+      return respond({axis,label,description},200,origin,{
+        'X-AI-Provider':reviewed.provider,
+        'X-AI-Creator-Provider':generated.provider,
+        'X-AI-Fallback':String(Boolean(generated.fallback||reviewed.fallback)),
+      })
     }
     return respond({error:'Не нашлось достаточно хорошего усложнения.'},422,origin)
   }catch{
