@@ -63,7 +63,9 @@ test('Groq 429 -> Gemini model, schema and payload; next call skips Groq cooldow
       assert.equal(data.generationConfig.thinkingConfig.thinkingLevel,'low')
       assert.equal(data.generationConfig.temperature,undefined)
       assert.equal(data.generationConfig.responseMimeType,'application/json')
-      assert.deepEqual(data.generationConfig.responseSchema,shape.schema)
+      assert.ok(!Object.hasOwn(data.generationConfig.responseSchema,'additionalProperties'))
+      assert.equal(data.generationConfig.responseSchema.type,shape.schema.type)
+      assert.deepEqual(data.generationConfig.responseSchema.properties,shape.schema.properties)
       assert.ok(data.systemInstruction.parts[0].text.includes('Pick one card'))
       assert.ok(data.contents[0].parts[0].text.includes('candidates'))
       return gemini()
@@ -187,5 +189,37 @@ test('a server-side Gemini-first canary chooses real Gemini without a client fla
     assert.equal(result.provider,'gemini')
     assert.equal(geminiCalls,1)
     assert.equal(groqCalls,0)
+  }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
+})
+
+
+test('Gemini strips OpenAI-only additionalProperties recursively without losing enum or required',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  const schema={
+    ...shape.schema,
+    additionalProperties:false,
+    properties:{
+      ...shape.schema.properties,
+      details:{type:'object',additionalProperties:false,
+        properties:{value:{type:'string'}},required:['value']},
+    },
+    required:['selectedId','details'],
+  }
+  try{
+    globalThis.fetch=async(url,init)=>{
+      assert.match(String(url),/generativelanguage.googleapis.com/)
+      const body=JSON.parse(init.body)
+      const responseSchema=body.generationConfig.responseSchema
+      assert.equal(responseSchema.additionalProperties,undefined)
+      assert.equal(responseSchema.properties.details.additionalProperties,undefined)
+      assert.deepEqual(responseSchema.properties.selectedId.enum,shape.schema.properties.selectedId.enum)
+      assert.deepEqual(responseSchema.required,['selectedId','details'])
+      return gemini()
+    }
+    const response=await completeGameJSON({GEMINI_API_KEY:'gemini-unit-key'},
+      {...shape,schema})
+    assert.equal(response.provider,'gemini')
+    assert.equal(response.attempts,'gemini:200')
   }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
 })

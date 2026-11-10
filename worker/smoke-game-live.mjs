@@ -28,7 +28,9 @@ try{
     signal:controller.signal,
   })
   const data=await response.json().catch(()=>null)
-  console.log('AI Director live status:',response.status,'provider:',response.headers.get('X-AI-Provider'))
+  console.log('AI Director live status:',response.status,
+    'provider:',response.headers.get('X-AI-Provider'),
+    'attempts:',response.headers.get('X-AI-Attempts'))
   if(!response.ok) throw Error('Endpoint returned '+response.status+': '+JSON.stringify(data))
   if(!payload.candidates.some(c=>c.id===data?.selectedId)) {
     throw Error('AI selected an unknown card ID: '+JSON.stringify(data))
@@ -55,6 +57,7 @@ try{
     console.log('Creative AI attempt',attempt,'status:',response.status,
       'reviewer:',response.headers.get('X-AI-Provider'),
       'creator:',response.headers.get('X-AI-Creator-Provider'),
+      'attempts:',response.headers.get('X-AI-Attempts'),
       JSON.stringify(candidate))
     if(response.status===422)continue // Rejected creativity is expected sometimes.
     if(!response.ok)throw Error('AI modifier endpoint unavailable: '+JSON.stringify(candidate))

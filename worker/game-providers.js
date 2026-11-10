@@ -110,6 +110,20 @@ async function callGroq(env,input,route) {
   }
 }
 
+// Gemini generateContent responseSchema supports a subset of JSON Schema.
+ // OpenAI strict schemas require additionalProperties:false, but Gemini's
+ // responseSchema rejects that keyword; preserve the allowlist checks in
+ // the validated game routes instead.
+function geminiSchema(value){
+  if(Array.isArray(value))return value.map(geminiSchema)
+  if(!value||typeof value!=='object')return value
+  const obj={}
+  for(const [key,v] of Object.entries(value)){
+    if(key!=='additionalProperties')obj[key]=geminiSchema(v)
+  }
+  return obj
+}
+
 async function callGemini(env,input,route) {
   const model=env.GEMINI_GAME_MODEL||DEFAULT_GEMINI
   if(!/^gemini-[a-z0-9.-]{3,48}$/.test(model)){
@@ -131,7 +145,7 @@ async function callGemini(env,input,route) {
             thinkingConfig:{thinkingLevel:'low'},
             maxOutputTokens:Math.min(4096,Math.max(1400,input.tokens*2)),
             responseMimeType:'application/json',
-            responseSchema:input.schema,
+            responseSchema:geminiSchema(input.schema),
           },
         }),
       }),5300)
@@ -173,6 +187,7 @@ export async function completeGameJSON(env,input) {
   }
   let throttled=false
   let error=503
+  const attempts=[]
   for(let i=0;i<available.length;i++){
     const provider=available[i]
     const result=provider==='groq'
@@ -180,14 +195,16 @@ export async function completeGameJSON(env,input) {
       :await callGemini(env,input,input.route)
     if(result.value){
       emit({provider,route:input.route,status:'completed',fallback:i>0})
-      return {...result,fallback:i>0}
+      attempts.push(provider+':200')
+      return {...result,fallback:i>0,attempts:attempts.join(',')}
     }
     error=result.error??502
+    attempts.push(provider+':'+error)
     if(error===429)throttled=true
     // For hard request failures fallback to the other configured provider
     // when possible; the next provider independently checks the JSON.
   }
-  return {error:throttled?429:error}
+  return {error:throttled?429:error,attempts:attempts.join(',')}
 }
 
 /** Public health intentionally reports configuration, not account quotas. */

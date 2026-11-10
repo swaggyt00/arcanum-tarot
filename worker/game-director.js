@@ -137,7 +137,8 @@ export async function handleGameDirector(request, env, origin) {
       selectedId:result.selectedId,
       intro,
       addCondition:parsed.allowCondition && (parsed.forceCondition || result.addCondition === true),
-    },200,origin,{'X-AI-Provider':generated.provider,'X-AI-Fallback':String(generated.fallback)})
+    },200,origin,{'X-AI-Provider':generated.provider,'X-AI-Fallback':String(generated.fallback),
+      'X-AI-Attempts':generated.attempts})
   } catch {
     return respond({error:'Не удалось получить ответ AI.'},502,origin)
   }
