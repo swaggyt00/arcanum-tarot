@@ -22,7 +22,8 @@ const SYSTEM = [
   'Ты также создаёшь короткий НЕВИДИМЫЙ сюжетный план scenePlan: РОВНО три будущих шага в строгом порядке build → twist → payoff. Каждый шаг — только phase, chain, preferredType. Это направления выбора карт, а НЕ действия, обязательства, новые правила или обещания событий.',
   'Придумай согласованную драматургическую дугу на основе имеющихся chain-тем, истории принятых и пропущенных ходов, а не выдуманных устных признаний и эмоций.',
   'ОБЯЗАТЕЛЬНО: первый beat build и третий beat payoff должны иметь chain, присутствующий в chains выбранной selectedId карточки. Так финал вернётся к началу истории. Средний beat twist вправе сменить chain только в разрешённых темах.',
-  'В party/afterdark twist может переключить тему, а payoff должен напоминать предыдущую тему. В sex во время физической сцены twist означает изменение нюанса ВНУТРИ уже допустимой темы, НЕ новую сексуальную практику.',
+  'В couple/party/afterdark второй beat twist ОБЯЗАТЕЛЬНО меняет chain относительно selectedId, когда среди candidates есть иная chain. Если иной chain нет, сохрани исходную. Третий beat payoff возвращается к chain selectedId.',
+  'В sex во время физической сцены twist означает изменение нюанса ВНУТРИ уже допустимой темы, НЕ новую сексуальную практику и не переключение на неожиданный опрос.',
   'Указывай в scenePlan только chain из списка доступных candidate chains. Если на будущем ходе выбран другой риск, стадия или участник, план необязателен и отступает перед реальной проверкой допустимости.',
   'Если activeScene задан, это уже сохранённый предыдущий план. Выбирай подходящую доступную карточку, если это не противоречит актуальному риску, skip или локальному pacing.',
   'Никаких текстов будущих заданий, инструкций, имён, фантазий за игроков или требований выполнить что-либо в будущем: только chain, phase, preferredType. Согласие и границы важнее сюжета.',
@@ -234,6 +235,9 @@ export async function handleGameDirector(request, env, origin) {
     const validPlan=Array.isArray(beats) && beats.length===3
       && selected?.chains.includes(beats[0]?.chain)
       && selected?.chains.includes(beats[2]?.chain)
+      && (parsed.scenario==='sex'
+        || !planChains.some(chain=>!selected.chains.includes(chain))
+        || !selected.chains.includes(beats[1]?.chain))
       && beats.every((beat,index)=>beat&&typeof beat==='object'
         && beat.phase===storyPhases[index]
         && planChains.includes(beat.chain)
