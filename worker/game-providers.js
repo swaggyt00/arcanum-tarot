@@ -176,9 +176,14 @@ export async function completeGameJSON(env,input) {
   ]
   if(!configured.length)return {error:503}
   const now=epoch()
-  // Canary preference is deploy-time only, never selected by public requests.
-  // Default production order stays Groq -> Gemini.
-  const order=env.GEMINI_GAME_PRIMARY === 'true' ? [...configured].reverse() : configured
+  // The default preference remains Groq -> Gemini. A trusted game route
+  // may prefer the *other* model for an independent second-pass review.
+  // It cannot force an unavailable model, bypass a cooldown or affect Tarot.
+  const defaultOrder=env.GEMINI_GAME_PRIMARY === 'true' ? [...configured].reverse() : configured
+  const preferred=input.preferredProvider
+  const order=(preferred==='groq'||preferred==='gemini') && configured.includes(preferred)
+    ?[preferred,...defaultOrder.filter(provider=>provider!==preferred)]
+    :defaultOrder
   const available=order.filter(provider=>STATE[provider].until<=now)
   if(!available.length){
     const minWait=Math.max(1,Math.ceil(Math.min(...configured.map(p=>STATE[p].until-now))/1000))

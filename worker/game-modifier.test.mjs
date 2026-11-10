@@ -23,6 +23,7 @@ const draft={
 const approve={
   harder:true,relevant:true,compatible:true,noNewTask:true,
   respectsBoundaries:true,nonDecorative:true,feasible:true,naturalRussian:true,
+  easyToVerify:true,singleRule:true,
   reason:'Вводит измеримый новый ритм и запрет повторов.',
 }
 const req=(data=payload,orig=origin)=>new Request('https://example.workers.dev/game/modifier',{
@@ -86,6 +87,81 @@ test('rejects decorative reactions, after-task gestures and canned labels before
       assert.equal(calls,2,'Each invalid draft may be retried once, but the judge must not see it')
     }
   }finally{globalThis.fetch=old}
+})
+
+
+test('blocks real production failure: wrong Russian agreement and uncheckable letter puzzle',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  const bad=[
+    {
+      ...draft,axis:'constraint',label:'ТОЛЬКО УНИКАЛЬНЫЕ БУКВЫ',
+      description:'В течение 15-секундного рекламного ролика каждый произнесённый слово должен содержать только уникальные буквы внутри него (без повторяющихся символов).',
+      whyHarder:'Контролировать каждое слово посреди импровизации труднее обычной рекламы.',
+    },
+    {
+      ...draft,axis:'constraint',label:'УНИКАЛЬНЫЙ АЛФАВИТ',
+      description:'В течение пятнадцати секунд используй только слова с уникальными буквами и не допускай повторяющихся символов во время всего выступления.',
+      whyHarder:'Требуется отслеживать каждую произнесённую букву, пока идёт речь.',
+    },
+    {
+      ...draft,axis:'sequence',label:'КАЖДЫЙ ТРЕТИЙ СЕКУНДЫ',
+      description:'Во время рекламы каждый третий секунды меняй аргумент, сохраняя уверенный темп и ни разу не повторяя описания.',
+      whyHarder:'Требуется дополнительный контроль последовательности аргументов.',
+    },
+  ]
+  try{
+    for(const candidate of bad){
+      let called=0
+      globalThis.fetch=async()=>{
+        called++
+        return completion(candidate)
+      }
+      const response=await handleGameModifier(req(),env,origin)
+      assert.equal(response.status,422,JSON.stringify(candidate))
+      assert.equal(called,2,'reject bad draft BEFORE the reviewer and retry just once')
+    }
+  }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
+})
+
+test('a malformed first draft can be replaced by a genuinely checkable condition',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  const bad={...draft,axis:'constraint',label:'УНИКАЛЬНЫЕ БУКВЫ',
+    description:'Каждый произнесённый слово должно содержать уникальные буквы без повторений в течение пятнадцатисекундной рекламы.',
+    whyHarder:'Контроль всех произнесённых букв усложняет импровизацию.'}
+  try{
+    let calls=0
+    globalThis.fetch=async()=>{
+      calls++
+      return completion(calls===1?bad:calls===2?draft:approve)
+    }
+    const response=await handleGameModifier(req(),env,origin)
+    assert.equal(response.status,200)
+    assert.equal(calls,3)
+    assert.equal((await response.json()).label,draft.label)
+  }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
+})
+
+test('independent reviewer must explicitly approve real-time checkability and coherence',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  try{
+    let calls=0
+    globalThis.fetch=async()=>{
+      calls++
+      return completion(calls%2?draft:{...approve,easyToVerify:false})
+    }
+    assert.equal((await handleGameModifier(req(),env,origin)).status,422)
+    assert.equal(calls,4)
+    calls=0
+    globalThis.fetch=async()=>{
+      calls++
+      return completion(calls%2?draft:{...approve,singleRule:false})
+    }
+    assert.equal((await handleGameModifier(req(),env,origin)).status,422)
+    assert.equal(calls,4)
+  }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
 })
 
 test('semantic quality reviewer rejects fake difficulty and contradictions',async()=>{
@@ -226,6 +302,56 @@ test('Gemini continues independent creative generation and review after Groq 429
     assert.equal(result.headers.get('X-AI-Fallback'),'true')
     assert.equal(groqCalls,1,'Groq cooldown applies across creator and reviewer')
     assert.equal(geminiCalls,2)
+  }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
+})
+
+
+test('creator Groq and independent Gemini review when both are healthy',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  const both={...env,GEMINI_API_KEY:'unit-gemini'}
+  const calls=[]
+  try{
+    globalThis.fetch=async(url,options)=>{
+      calls.push(String(url).includes('api.groq.com')?'groq':'gemini')
+      if(calls.length===1){
+        assert.match(String(url),/api.groq.com/)
+        return completion(draft)
+      }
+      assert.match(String(url),/generativelanguage.googleapis.com/)
+      const payload=JSON.parse(options.body)
+      assert.equal(payload.generationConfig.responseSchema.properties.easyToVerify.type,'boolean')
+      assert.equal(payload.generationConfig.responseSchema.properties.singleRule.type,'boolean')
+      return Response.json({candidates:[{content:{parts:[{text:JSON.stringify(approve)}]}}]})
+    }
+    const response=await handleGameModifier(req(),both,origin)
+    assert.equal(response.status,200)
+    assert.deepEqual(calls,['groq','gemini'])
+    assert.equal(response.headers.get('X-AI-Creator-Provider'),'groq')
+    assert.equal(response.headers.get('X-AI-Provider'),'gemini')
+    assert.deepEqual(await response.json(),{
+      axis:draft.axis,label:draft.label,description:draft.description,
+    })
+  }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
+})
+
+test('reviewer falls back to original provider if alternate reviewer returns 503',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  const both={...env,GEMINI_API_KEY:'unit-gemini'}
+  const calls=[]
+  try{
+    globalThis.fetch=async(url)=>{
+      const provider=String(url).includes('api.groq.com')?'groq':'gemini'
+      calls.push(provider)
+      if(calls.length===1)return completion(draft)
+      if(provider==='gemini')return Response.json({error:'temporary'}, {status:503})
+      return completion(approve)
+    }
+    const response=await handleGameModifier(req(),both,origin)
+    assert.equal(response.status,200)
+    assert.deepEqual(calls,['groq','gemini','groq'])
+    assert.equal(response.headers.get('X-AI-Provider'),'groq')
   }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
 })
 
