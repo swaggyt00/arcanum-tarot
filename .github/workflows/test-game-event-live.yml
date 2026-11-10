@@ -1,10 +1,9 @@
 name: Verify live AI event generation
 on:
-  push:
+  workflow_run:
+    workflows: ["Deploy ARCAnum AI Worker"]
+    types: [completed]
     branches: [main]
-    paths:
-      - "worker/smoke-game-event-live.mjs"
-      - ".github/workflows/test-game-event-live.yml"
   workflow_dispatch:
 
 permissions:
@@ -12,12 +11,28 @@ permissions:
 
 jobs:
   event-live:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 2
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-      - name: Exercise original AI Event on public Worker
+      - name: Check whether event smoke files changed
+        id: event-changes
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only HEAD^ HEAD | grep -Eq '^worker/smoke-game-event-live\.mjs$|^\.github/workflows/test-game-event-live\.yml$'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Exercise original AI Event on published Worker
+        if: steps.event-changes.outputs.run == 'true'
         run: node worker/smoke-game-event-live.mjs
