@@ -64,6 +64,31 @@ test('creates original gameplay event, passes independent judge, sends no names 
   }finally{globalThis.fetch=old;resetGameProviderStateForTests()}
 })
 
+test('server strips arbitrary personal fields before sending anonymized event history to providers',async()=>{
+  resetGameProviderStateForTests()
+  const original=globalThis.fetch
+  let calls=0
+  const forged={
+    ...payload,
+    players:payload.players.map(p=>({...p,playerName:'PERSONAL_SECRET_NAME'})),
+    recent:payload.recent.map(p=>({...p,spokenAnswer:'VERY_PRIVATE_ANSWER'})),
+    events:payload.events.map(e=>({...e,details:'OTHER_PRIVATE_DETAILS'})),
+  }
+  try{
+    globalThis.fetch=async(_url,options)=>{
+      const sent=JSON.stringify(JSON.parse(options.body))
+      assert.ok(!sent.includes('PERSONAL_SECRET_NAME'))
+      assert.ok(!sent.includes('VERY_PRIVATE_ANSWER'))
+      assert.ok(!sent.includes('OTHER_PRIVATE_DETAILS'))
+      calls++
+      return groq(calls===1?draft:approve)
+    }
+    const response=await handleGameEvent(request(forged),env,origin)
+    assert.equal(response.status,200)
+    assert.equal(calls,2)
+  }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
+})
+
 test('invalid parameters, unknown mechanics and fabricated participant information are rejected',async()=>{
   assert.equal((await handleGameEvent(request({...payload,turnsPlayed:1}),env,origin)).status,400)
   assert.equal((await handleGameEvent(request({...payload,playersCount:7}),env,origin)).status,400)
