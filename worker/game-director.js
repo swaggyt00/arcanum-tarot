@@ -118,12 +118,19 @@ function validateRequest(body) {
   const sanitizedEvents=events.map(x=>({
     turn:x.turn,title:x.title,mechanics:x.mechanics.slice(0,2),accepted:x.accepted,
   }))
+  const sanitizedPacing=pacing===null
+    ?{intent:'explore',momentum:0,preferType:null,focusChain:null,avoidChain:null,suppressOptionalModifier:false}
+    :{
+      intent:pacing.intent,momentum:pacing.momentum,preferType:pacing.preferType,
+      focusChain:pacing.focusChain,avoidChain:pacing.avoidChain,
+      suppressOptionalModifier:pacing.suppressOptionalModifier,
+    }
   return {
     scenario: body.scenario, risk: body.risk, stage: body.stage,
     tension: body.tension, chainFamily: body.chainFamily,
     chainDepth: body.chainDepth, recent, candidates,
     actorIndex, players:sanitizedPlayers, events:sanitizedEvents,
-    pacing:pacing??{intent:'explore',momentum:0,preferType:null,focusChain:null,avoidChain:null,suppressOptionalModifier:false},
+    pacing:sanitizedPacing,
     allowCondition: body.allowCondition === true,
     forceCondition: body.forceCondition === true && body.allowCondition === true,
   }
