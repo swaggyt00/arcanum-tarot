@@ -286,5 +286,17 @@ test('invalid future arcs never replace a valid card or enforce an imagined acti
     const data=await response.json()
     assert.equal(data.selectedId,body.candidates[1].id)
     assert.equal(data.scenePlan,null,'unsupported practice/theme is discarded, not shown')
+    globalThis.fetch=async()=>Response.json({choices:[{message:{content:JSON.stringify({
+      selectedId:body.candidates[0].id,intro:'Карточка доступна.',addCondition:false,
+      scenePlan:{beats:[
+        {phase:'build',chain:'kissing',preferredType:'either'},
+        {phase:'twist',chain:'tease',preferredType:'either'},
+        {phase:'payoff',chain:'kissing',preferredType:'either'},
+      ]},
+    })}}]})
+    const disconnected=await handleGameDirector(req(),env,origin)
+    assert.equal(disconnected.status,200)
+    assert.equal((await disconnected.json()).scenePlan,null,
+      'supported but unrelated themes cannot be a fake continuation of the opener')
   }finally{globalThis.fetch=original;resetGameProviderStateForTests()}
 })
